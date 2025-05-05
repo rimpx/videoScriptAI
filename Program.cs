@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using videoscriptAI.Data;
+using videoscriptAI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +21,19 @@ builder.Services.AddAuthentication()
         options.CallbackPath = "/signin-google"; // Percorso di callback
     });
 
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30); // Session timeout
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
+
+
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<IAIService, GeminiService>();
+
 
 
 builder.Services.AddRazorPages();
@@ -38,6 +51,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseSession();
+
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,174 +1,250 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
+using System.Net.Http;
+using System.Text;
 using System.Text.Json;
-using System.IO;
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
 
 namespace videoscriptAI.Pages
 {
     public class ChatModel : PageModel
     {
-        private readonly ILogger<ChatModel> _logger;
-        private readonly string _sessionFilePath;
-
-        // Service to handle AI interactions - you would inject your actual service here
-        // private readonly IAIService _aiService;
+        private readonly IConfiguration _configuration;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly string _apiKey;
+        private readonly string _model = "gemini-1.0-pro";
+        private const string SessionKeyChatHistory = "_ChatHistory";
 
         [BindProperty]
         public string NewMessage { get; set; }
 
-        public List<ChatMessage> ChatMessages { get; private set; } = new List<ChatMessage>();
-
+        public List<ChatMessageViewModel> ChatMessages { get; private set; } = new List<ChatMessageViewModel>();
         public bool IsProcessing { get; private set; } = false;
 
-        // Session ID to persist chat history between page refreshes
-        private string SessionId => HttpContext.Session.Id;
-
-        public ChatModel(ILogger<ChatModel> logger)
+        public ChatModel(IConfiguration configuration, IHttpClientFactory httpClientFactory)
         {
-            _logger = logger;
-
-            // Define path for session storage
-            var tempPath = Path.GetTempPath();
-            _sessionFilePath = Path.Combine(tempPath, "videoScriptAI", "sessions");
-
-            // Ensure directory exists
-            if (!Directory.Exists(_sessionFilePath))
-            {
-                Directory.CreateDirectory(_sessionFilePath);
-            }
+            _configuration = configuration;
+            _httpClientFactory = httpClientFactory;
+            _apiKey = _configuration["Gemini:ApiKey"];
         }
 
         public void OnGet()
         {
-            // Load chat history for this session
-            LoadChatHistory();
+            ChatMessages = HttpContext.Session.Get<List<ChatMessageViewModel>>(SessionKeyChatHistory) ??
+                new List<ChatMessageViewModel>();
         }
 
-        public async Task<IActionResult> OnPostAsync()
+        public async Task<IActionResult> OnPostSendMessageAsync()
         {
-            if (string.IsNullOrWhiteSpace(NewMessage))
-            {
-                return RedirectToPage();
-            }
-
             try
             {
-                // Load existing chat history
-                LoadChatHistory();
+                if (string.IsNullOrWhiteSpace(NewMessage))
+                    return BadRequest("Message cannot be empty");
 
-                // Add user message
-                var userMessage = new ChatMessage
+                IsProcessing = true;
+
+                // Get existing chat history or create new one
+                ChatMessages = HttpContext.Session.Get<List<ChatMessageViewModel>>(SessionKeyChatHistory) ??
+                    new List<ChatMessageViewModel>();
+
+                // Add user message to chat
+                var userMessage = new ChatMessageViewModel
                 {
                     Text = NewMessage,
                     IsUser = true,
                     Timestamp = DateTime.Now
                 };
                 ChatMessages.Add(userMessage);
-                SaveChatHistory();
 
-                // Process with AI
-                IsProcessing = true;
-                var response = await GenerateAIResponse(NewMessage);
+                // Get AI response
+                var response = await GetGeminiResponseAsync(ChatMessages);
 
-                // Add AI response
-                var aiMessage = new ChatMessage
+                // Add AI response to chat
+                var aiMessage = new ChatMessageViewModel
                 {
                     Text = response,
                     IsUser = false,
                     Timestamp = DateTime.Now
                 };
                 ChatMessages.Add(aiMessage);
-                SaveChatHistory();
 
-                IsProcessing = false;
+                // Save chat history to session
+                HttpContext.Session.Set(SessionKeyChatHistory, ChatMessages);
+
+                // For AJAX requests
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return new JsonResult(new { success = true, response = response });
+                }
+
+                // Clear input field
                 NewMessage = string.Empty;
+                IsProcessing = false;
 
-                return RedirectToPage();
+                return Page();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing chat message");
-                ModelState.AddModelError(string.Empty, "An error occurred while processing your message. Please try again.");
+                // Log the error (add proper logging here)
+                Console.WriteLine($"Error: {ex.Message}");
+
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return new JsonResult(new { success = false, error = "An error occurred" });
+                }
+
+                // Add error message for user
+                ChatMessages.Add(new ChatMessageViewModel
+                {
+                    Text = "Sorry, I encountered an error. Please try again.",
+                    IsUser = false,
+                    Timestamp = DateTime.Now
+                });
+
+                HttpContext.Session.Set(SessionKeyChatHistory, ChatMessages);
+                IsProcessing = false;
                 return Page();
             }
         }
 
-        private async Task<string> GenerateAIResponse(string userMessage)
+        private async Task<string> GetGeminiResponseAsync(List<ChatMessageViewModel> chatHistory)
         {
-            // TODO: Replace with actual AI service integration
-            // In a real implementation, you would call your AI service here
-            // return await _aiService.GenerateResponseAsync(userMessage, ChatMessages);
+            var httpClient = _httpClientFactory.CreateClient();
 
-            // Simulate AI thinking time
-            await Task.Delay(1000);
+            // Convert chat history to Gemini format
+            var geminiMessages = new List<object>();
 
-            // Demo responses based on keywords
-            if (userMessage.Contains("script", StringComparison.OrdinalIgnoreCase))
+            // Add system message if it's a new conversation
+            if (chatHistory.Count <= 1)
             {
-                return "I'd be happy to help you with your script! Could you tell me more about the video topic, target audience, and approximate length you're aiming for?";
-            }
-            else if (userMessage.Contains("outline", StringComparison.OrdinalIgnoreCase))
-            {
-                return "Creating a solid outline is a great first step! Here's a basic structure you could follow:\n\n1. Hook/Attention grabber (15 sec)\n2. Introduction and topic overview (30-45 sec)\n3. Main points (3-5 sections, 1-2 min each)\n4. Practical examples or demonstrations\n5. Summary of key takeaways\n6. Call to action\n\nWould you like me to customize this outline for your specific topic?";
-            }
-            else if (userMessage.Contains("intro", StringComparison.OrdinalIgnoreCase))
-            {
-                return "For a compelling introduction, consider these approaches:\n\n- Ask a thought-provoking question\n- Share a surprising statistic\n- Tell a short, relevant story\n- Make a bold statement\n- Create a \"what if\" scenario\n\nWhich of these would work best for your video topic?";
-            }
-            else
-            {
-                return "I'm your AI assistant for video script creation. I can help with outlining, writing, refining, and optimizing your scripts. What specific aspect of your video script would you like help with today?";
-            }
-        }
-
-        private void LoadChatHistory()
-        {
-            var filePath = Path.Combine(_sessionFilePath, $"{SessionId}.json");
-
-            if (System.IO.File.Exists(filePath))
-            {
-                try
+                geminiMessages.Add(new
                 {
-                    var json = System.IO.File.ReadAllText(filePath);
-                    ChatMessages = JsonSerializer.Deserialize<List<ChatMessage>>(json) ?? new List<ChatMessage>();
-                }
-                catch (Exception ex)
+                    role = "system",
+                    parts = new[] { new { text = "You are a helpful Video Script Assistant. Your primary focus is to help users create, refine, and optimize video scripts. Offer creative suggestions for scripts, help with structure, provide engaging introductions and conclusions, and optimize for different platforms. Be concise yet helpful, professional and creative." } }
+                });
+            }
+
+            // Add user and model messages
+            foreach (var message in chatHistory)
+            {
+                geminiMessages.Add(new
                 {
-                    _logger.LogError(ex, "Error loading chat history");
-                    ChatMessages = new List<ChatMessage>();
+                    role = message.IsUser ? "user" : "model",
+                    parts = new[] { new { text = message.Text } }
+                });
+            }
+
+            // Create request body
+            var requestBody = new
+            {
+                model = _model,
+                messages = geminiMessages,
+                temperature = 0.7,
+                maxOutputTokens = 1024
+            };
+
+            // Serialize and prepare request
+            var content = new StringContent(
+                JsonSerializer.Serialize(requestBody),
+                Encoding.UTF8,
+                "application/json");
+
+            // Send request to Gemini API
+            var response = await httpClient.PostAsync(
+                $"https://generativelanguage.googleapis.com/v1/models/{_model}:generateContent?key={_apiKey}",
+                content);
+
+            // Process response
+            if (response.IsSuccessStatusCode)
+            {
+                var responseString = await response.Content.ReadAsStringAsync();
+                var responseObject = JsonSerializer.Deserialize<GeminiResponse>(responseString);
+
+                if (responseObject?.candidates?.Count > 0 &&
+                    responseObject.candidates[0]?.content?.parts?.Count > 0)
+                {
+                    return responseObject.candidates[0].content.parts[0].text;
                 }
             }
-            else
+
+            // Log the error
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Gemini API error: {response.StatusCode}, {errorContent}");
+
+            return "I'm sorry, I couldn't generate a response. Please try again later.";
+        }
+    }
+
+    public class ChatMessageViewModel
+    {
+        public string Text { get; set; }
+        public bool IsUser { get; set; }
+        public DateTime Timestamp { get; set; } = DateTime.Now;
+
+        public string FormattedText
+        {
+            get
             {
-                ChatMessages = new List<ChatMessage>();
+                if (string.IsNullOrEmpty(Text))
+                    return string.Empty;
+
+                // Convert new lines to <br>
+                var text = Text.Replace("\n", "<br>");
+
+                // Format bullet points
+                text = Regex.Replace(text, @"•\s+(.*?)(?=<br>|$)",
+                                    "<span style=\"display:flex;\"><span style=\"margin-right:5px;\">•</span><span>$1</span></span>");
+
+                // Bold for ** text **
+                text = Regex.Replace(text, @"\*\*(.*?)\*\*", "<strong>$1</strong>");
+
+                // Italic for * text *
+                text = Regex.Replace(text, @"\*([^*]+)\*", "<em>$1</em>");
+
+                return text;
             }
         }
+    }
 
-        private void SaveChatHistory()
+    // Gemini API response classes
+    public class GeminiResponse
+    {
+        public List<Candidate> candidates { get; set; }
+    }
+
+    public class Candidate
+    {
+        public Content content { get; set; }
+    }
+
+    public class Content
+    {
+        public List<Part> parts { get; set; }
+    }
+
+    public class Part
+    {
+        public string text { get; set; }
+    }
+
+    // Session extensions
+    public static class SessionExtensions
+    {
+        public static void Set<T>(this ISession session, string key, T value)
         {
-            var filePath = Path.Combine(_sessionFilePath, $"{SessionId}.json");
-
-            try
-            {
-                var json = JsonSerializer.Serialize(ChatMessages);
-                System.IO.File.WriteAllText(filePath, json);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving chat history");
-            }
+            session.SetString(key, JsonSerializer.Serialize(value));
         }
 
-        public class ChatMessage
+        public static T Get<T>(this ISession session, string key)
         {
-            public string Text { get; set; }
-            public bool IsUser { get; set; }
-            public DateTime Timestamp { get; set; }
+            var value = session.GetString(key);
+            return value == null ? default : JsonSerializer.Deserialize<T>(value);
         }
     }
 }
