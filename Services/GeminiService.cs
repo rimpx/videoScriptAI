@@ -1,114 +1,148 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using System.Collections.Generic;
-using videoscriptAI.Models;
+using Microsoft.Extensions.Logging;
+using videoscriptAI.Pages;
 
 namespace videoscriptAI.Services
 {
-    public class GeminiService : IAIService
+    public class GeminiService
     {
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
-        private readonly string _model = "gemini-1.0-pro";
         private readonly ILogger<GeminiService> _logger;
 
-        public GeminiService(IConfiguration configuration, ILogger<GeminiService> logger)
+        public GeminiService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<GeminiService> logger)
         {
-            _httpClient = new HttpClient();
+            _httpClient = httpClientFactory.CreateClient();
             _apiKey = configuration["Gemini:ApiKey"];
             _logger = logger;
         }
 
-        public async Task<string> GetResponseAsync(List<ChatMessage> messages)
+        public async Task<string> GetResponseAsync(List<ChatMessageViewModel> messages)
         {
             try
             {
-                // Convert our app's messages format to Gemini's format
-                var geminiMessages = ConvertToGeminiMessages(messages);
+                // Convert our chat messages to Gemini format
+                var geminiMessages = new List<object>();
 
-                // Create request body
+                // Add system prompt as the first message
+                geminiMessages.Add(new
+                {
+                    role = "system",
+                    parts = new List<object>
+                    {
+                        new { text = "You are a helpful Video Script Assistant specialized in helping users create professional video scripts. Be concise, creative and professional." }
+                    }
+                });
+
+                // Add conversation history
+                foreach (var message in messages)
+                {
+                    geminiMessages.Add(new
+                    {
+                        role = message.IsUser ? "user" : "model",
+                        parts = new List<object>
+                        {
+                            new { text = message.Text }
+                        }
+                    });
+                }
+
                 var requestBody = new
                 {
-                    model = _model,
-                    messages = geminiMessages,
-                    temperature = 0.7,
-                    top_p = 0.95,
-                    max_output_tokens = 1024
+                    contents = geminiMessages,
+                    generationConfig = new
+                    {
+                        temperature = 0.7,
+                        max_output_tokens = 2048,
+                        top_p = 0.95,
+                        top_k = 40
+                    }
                 };
 
-                // Serialize and prepare request
+                _logger.LogInformation("Sending request to Gemini API with {MessageCount} messages", messages.Count);
+
                 var content = new StringContent(
                     JsonSerializer.Serialize(requestBody),
                     Encoding.UTF8,
                     "application/json");
 
-                // Send request to Gemini API
+                // Use the correct endpoint format for Gemini Pro chat model
                 var response = await _httpClient.PostAsync(
-                    $"https://generativelanguage.googleapis.com/v1beta/models/{_model}:generateContent?key={_apiKey}",
+                    $"https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent?key={_apiKey}",
                     content);
 
-                // Process response
-                if (response.IsSuccessStatusCode)
-                {
-                    var responseString = await response.Content.ReadAsStringAsync();
-                    var responseObject = JsonSerializer.Deserialize<GeminiResponse>(responseString);
+                var responseJson = await response.Content.ReadAsStringAsync();
 
-                    if (responseObject?.candidates?.Count > 0 &&
-                        responseObject.candidates[0]?.content?.parts?.Count > 0)
-                    {
-                        return responseObject.candidates[0].content.parts[0].text;
-                    }
+                _logger.LogInformation("Received response from Gemini API. Status code: {StatusCode}", response.StatusCode);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("Gemini API error: {StatusCode}, Response: {Response}",
+                        response.StatusCode, responseJson);
+                    return "Sorry, I encountered an error. Please try again.";
                 }
 
-                _logger.LogError($"Gemini API error: {response.StatusCode}, {await response.Content.ReadAsStringAsync()}");
-                return "I'm sorry, I couldn't generate a response. Please try again later.";
+                // Parse the response
+                var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseJson);
+
+                if (geminiResponse?.candidates == null || geminiResponse.candidates.Count == 0 ||
+                    geminiResponse.candidates[0].content == null ||
+                    geminiResponse.candidates[0].content.parts == null ||
+                    geminiResponse.candidates[0].content.parts.Count == 0)
+                {
+                    _logger.LogError("Invalid Gemini API response format");
+                    return "Sorry, I received an invalid response format. Please try again.";
+                }
+
+                return geminiResponse.candidates[0].content.parts[0].text;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calling Gemini API");
-                return "I'm sorry, an error occurred. Please try again later.";
+                return "Sorry, I encountered an error. Please try again.";
             }
-        }
-
-        private List<object> ConvertToGeminiMessages(List<ChatMessage> messages)
-        {
-            var geminiMessages = new List<object>();
-
-            foreach (var message in messages)
-            {
-                geminiMessages.Add(new
-                {
-                    role = message.IsFromUser ? "user" : "model",
-                    parts = new[] { new { text = message.Content } }
-                });
-            }
-
-            return geminiMessages;
         }
     }
 
-    // Classes for deserializing the Gemini API response
     public class GeminiResponse
     {
-        public List<Candidate> candidates { get; set; }
+        public List<GeminiCandidate> candidates { get; set; }
+        public PromptFeedback promptFeedback { get; set; }
     }
 
-    public class Candidate
+    public class GeminiCandidate
     {
-        public Content content { get; set; }
+        public GeminiContent content { get; set; }
+        public string finishReason { get; set; }
+        public int index { get; set; }
     }
 
-    public class Content
+    public class GeminiContent
     {
-        public List<Part> parts { get; set; }
+        public List<GeminiPart> parts { get; set; }
+        public string role { get; set; }
     }
 
-    public class Part
+    public class GeminiPart
     {
         public string text { get; set; }
+    }
+
+    public class PromptFeedback
+    {
+        public SafetyRating[] safetyRatings { get; set; }
+    }
+
+    public class SafetyRating
+    {
+        public string category { get; set; }
+        public string probability { get; set; }
     }
 }
