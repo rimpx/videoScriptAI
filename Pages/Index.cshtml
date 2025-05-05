@@ -10,7 +10,7 @@
     {
         <h1 class="display-4">Benvenuto, @User.Identity.Name!</h1>
         <p class="lead">Inizia una chat con Gemini caricando un video o inserendo un link YouTube.</p>
-        <form asp-page="/Chat" method="post" enctype="multipart/form-data" class="mt-4">
+        <form asp-page="/Chat/Chat" method="post" enctype="multipart/form-data" class="mt-4">
             <div class="mb-3">
                 <label for="videoFile" class="form-label">Carica un video MP4</label>
                 <input type="file" class="form-control" id="videoFile" name="videoFile" accept="video/mp4">

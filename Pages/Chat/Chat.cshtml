@@ -1,1 +1,253 @@
-﻿
+﻿@page
+@model videoscriptAI.Pages.ChatModel
+@{
+    ViewData["Title"] = "AI Chat";
+}
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h1>Video Script AI Assistant</h1>
+        <p>Chat with our AI to help create and refine your video scripts</p>
+    </div>
+
+    <div class="chat-history" id="chatHistory">
+        @if (Model.ChatMessages.Any())
+        {
+            foreach (var message in Model.ChatMessages)
+            {
+                <div class="message @(message.IsUser ? "user-message" : "ai-message")">
+                    <div class="message-content">
+                        <span class="message-author">@(message.IsUser ? "You" : "AI Assistant")</span>
+                        <p>@message.Text</p>
+                        <span class="message-time">@message.Timestamp.ToString("HH:mm")</span>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="message ai-message">
+                <div class="message-content">
+                    <span class="message-author">AI Assistant</span>
+                    <p>Hello! I'm your Video Script AI Assistant. How can I help you today? You can ask me to:</p>
+                    <ul>
+                        <li>Generate a script outline for your video</li>
+                        <li>Suggest improvements to your existing script</li>
+                        <li>Create engaging introductions or conclusions</li>
+                        <li>Optimize your script for specific platforms</li>
+                    </ul>
+                    <span class="message-time">@DateTime.Now.ToString("HH:mm")</span>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="chat-input">
+        <form method="post" id="chatForm">
+            <div class="input-group">
+                <textarea asp-for="NewMessage" class="form-control" placeholder="Type your message here..." rows="2" required></textarea>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
+            </div>
+        </form>
+    </div>
+
+    @if (Model.IsProcessing)
+    {
+        <div class="typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Scroll chat to bottom when loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            scrollChatToBottom();
+        });
+
+        // Scroll chat to bottom when new messages arrive
+        function scrollChatToBottom() {
+            const chatHistory = document.getElementById('chatHistory');
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        // Auto-expand textarea as user types
+        const textarea = document.querySelector('textarea');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+            if (this.scrollHeight > 150) {
+                this.style.height = '150px';
+                this.style.overflowY = 'auto';
+            }
+        });
+
+        // Form submission with AJAX to prevent full page reload
+        const form = document.getElementById('chatForm');
+        form.addEventListener('submit', function(e) {
+            if (form.checkValidity()) {
+                const submitButton = form.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+            }
+        });
+    </script>
+}
+
+<style>
+    .chat-container {
+        max-width: 900px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 150px);
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .chat-header {
+        padding: 20px;
+        background-color: #343a40;
+        color: white;
+        text-align: center;
+    }
+
+    .chat-header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .chat-header p {
+        margin: 8px 0 0;
+        opacity: 0.8;
+    }
+
+    .chat-history {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .message {
+        display: flex;
+        margin-bottom: 10px;
+    }
+
+    .user-message {
+        justify-content: flex-end;
+    }
+
+    .ai-message {
+        justify-content: flex-start;
+    }
+
+    .message-content {
+        max-width: 80%;
+        padding: 12px 15px;
+        border-radius: 10px;
+        position: relative;
+    }
+
+    .user-message .message-content {
+        background-color: #007bff;
+        color: white;
+        border-top-right-radius: 0;
+    }
+
+    .ai-message .message-content {
+        background-color: #e9ecef;
+        color: #212529;
+        border-top-left-radius: 0;
+    }
+
+    .message-author {
+        font-size: 12px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .message-time {
+        font-size: 10px;
+        opacity: 0.7;
+        display: block;
+        text-align: right;
+        margin-top: 5px;
+    }
+
+    .message-content p {
+        margin: 0;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+    }
+
+    .message-content ul {
+        margin: 10px 0;
+        padding-left: 20px;
+    }
+
+    .chat-input {
+        padding: 15px;
+        background-color: white;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .input-group {
+        display: flex;
+    }
+
+    textarea {
+        resize: none;
+        overflow-y: hidden;
+        min-height: 44px;
+        border-radius: 22px;
+        padding: 10px 15px;
+    }
+
+    .btn-primary {
+        border-radius: 22px;
+        margin-left: 10px;
+        padding: 0 20px;
+    }
+
+    .typing-indicator {
+        padding: 15px;
+        background-color: white;
+        text-align: center;
+    }
+
+    .typing-indicator span {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        background-color: #e0e0e0;
+        border-radius: 50%;
+        margin: 0 3px;
+        animation: typing 1.5s infinite ease-in-out;
+    }
+
+    .typing-indicator span:nth-child(1) {
+        animation-delay: 0s;
+    }
+
+    .typing-indicator span:nth-child(2) {
+        animation-delay: 0.3s;
+    }
+
+    .typing-indicator span:nth-child(3) {
+        animation-delay: 0.6s;
+    }
+
+    
+</style>
