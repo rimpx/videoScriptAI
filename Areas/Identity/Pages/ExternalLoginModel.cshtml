@@ -1,0 +1,40 @@
+﻿@page
+@model videoscriptAI.Areas.Identity.Pages.Account.ExternalLoginModel
+@{
+    ViewData["Title"] = "Registrazione";
+}
+
+<h1>@ViewData["Title"]</h1>
+<h2 id="external-login-title">Associa il tuo account @Model.ProviderDisplayName.</h2>
+<hr />
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">
+        <p>@Model.ErrorMessage</p>
+    </div>
+}
+
+<p class="text-info">
+    Ti sei autenticato con successo con <strong>@Model.ProviderDisplayName</strong>.
+    Inserisci un indirizzo email per questo sito qui sotto e clicca sul pulsante Registrati per completare
+    l'accesso.
+</p>
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-page-handler="Confirmation" asp-route-returnUrl="@Model.ReturnUrl" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-floating mb-3">
+                <input asp-for="Input.Email" class="form-control" autocomplete="email" />
+                <label asp-for="Input.Email" class="form-label"></label>
+                <span asp-validation-for="Input.Email" class="text-danger"></span>
+            </div>
+            <button type="submit" class="w-100 btn btn-lg btn-primary">Registrati</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

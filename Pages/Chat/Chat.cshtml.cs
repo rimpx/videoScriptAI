@@ -10,13 +10,15 @@ using Microsoft.AspNetCore.Identity;
 using videoscriptAI.Data;
 using Microsoft.EntityFrameworkCore;
 using videoscriptAI.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace videoscriptAI.Pages
 {
+    [Authorize] // Aggiunto per richiedere l'autenticazione
     public class ChatModel : PageModel
     {
         private readonly ILogger<ChatModel> _logger;
-        private readonly GeminiService _geminiService;
+        private readonly IAIService _aiService;
         private readonly ApplicationDbContext _dbContext;
         private readonly UserManager<ApplicationUser> _userManager;
 
@@ -30,12 +32,12 @@ namespace videoscriptAI.Pages
 
         public ChatModel(
             ILogger<ChatModel> logger,
-            GeminiService geminiService,
+            IAIService aiService,
             ApplicationDbContext dbContext,
             UserManager<ApplicationUser> userManager)
         {
             _logger = logger;
-            _geminiService = geminiService;
+            _aiService = aiService;
             _dbContext = dbContext;
             _userManager = userManager;
         }
@@ -151,8 +153,12 @@ namespace videoscriptAI.Pages
                 }
 
                 // Load existing chat messages for context
-                ChatMessages = chat.ChatContents
-                    .OrderBy(m => m.CreatedAt)
+                List<ChatContent> existingContents = await _dbContext.ChatContents
+                    .Where(c => c.ChatId == chat.Id)
+                    .OrderBy(c => c.CreatedAt)
+                    .ToListAsync();
+
+                ChatMessages = existingContents
                     .Select(m => new ChatMessageViewModel
                     {
                         Text = m.Content,
@@ -178,10 +184,19 @@ namespace videoscriptAI.Pages
                     ChatId = chat.Id
                 };
                 _dbContext.ChatContents.Add(userChatContent);
+                await _dbContext.SaveChangesAsync();
+
+                // Converti la cronologia della chat in una lista di ChatMessage per l'API
+                var chatMessagesForApi = existingContents
+                    .Select(m => new ChatMessage(m.Content, m.IsFromUser))
+                    .ToList();
+
+                // Aggiungi il messaggio corrente dell'utente
+                chatMessagesForApi.Add(new ChatMessage(NewMessage, true));
 
                 // Get AI response
-                _logger.LogInformation("Getting response from Gemini API");
-                var response = await _geminiService.GetResponseAsync(ChatMessages);
+                _logger.LogInformation("Getting response from AI API");
+                var response = await _aiService.GetResponseAsync(chatMessagesForApi);
 
                 // Add and save AI response
                 var aiMessage = new ChatMessageViewModel
@@ -200,7 +215,6 @@ namespace videoscriptAI.Pages
                     ChatId = chat.Id
                 };
                 _dbContext.ChatContents.Add(aiChatContent);
-
                 await _dbContext.SaveChangesAsync();
                 _logger.LogInformation("Chat messages saved to database");
 
@@ -242,7 +256,7 @@ namespace videoscriptAI.Pages
             }
         }
 
-        public async Task<IActionResult> OnPostNewChatAsync()
+        public IActionResult OnPostNewChatAsync()
         {
             return RedirectToPage();
         }

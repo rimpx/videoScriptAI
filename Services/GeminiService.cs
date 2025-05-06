@@ -1,148 +1,94 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using videoscriptAI.Pages;
+using videoscriptAI.Models;
 
 namespace videoscriptAI.Services
 {
-    public class GeminiService
+    public class GeminiService : IAIService
     {
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly string _apiKey;
         private readonly ILogger<GeminiService> _logger;
+        private readonly string _baseUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
-        public GeminiService(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<GeminiService> logger)
+        public GeminiService(
+            IHttpClientFactory httpClientFactory,
+            IConfiguration configuration,
+            ILogger<GeminiService> logger)
         {
-            _httpClient = httpClientFactory.CreateClient();
-            _apiKey = configuration["Gemini:ApiKey"];
+            _httpClientFactory = httpClientFactory;
+            _apiKey = configuration["ApiKeys:Gemini"];
             _logger = logger;
         }
 
-        public async Task<string> GetResponseAsync(List<ChatMessageViewModel> messages)
+        /// <summary>
+        /// Implementazione dell'interfaccia IAIService per inviare messaggi all'API Gemini e ricevere risposte
+        /// </summary>
+        public async Task<string> GetResponseAsync(List<ChatMessage> messages)
         {
             try
             {
-                // Convert our chat messages to Gemini format
-                var geminiMessages = new List<object>();
+                _logger.LogInformation("Invio richiesta all'API Gemini");
 
-                // Add system prompt as the first message
-                geminiMessages.Add(new
-                {
-                    role = "system",
-                    parts = new List<object>
-                    {
-                        new { text = "You are a helpful Video Script Assistant specialized in helping users create professional video scripts. Be concise, creative and professional." }
-                    }
-                });
+                var client = _httpClientFactory.CreateClient();
+                var requestUrl = $"{_baseUrl}?key={_apiKey}";
 
-                // Add conversation history
-                foreach (var message in messages)
+                // Converti i messaggi nel formato richiesto da Gemini API
+                // Mappa IsFromUser a "user" o "assistant" come richiesto da Gemini
+                var requestData = new
                 {
-                    geminiMessages.Add(new
+                    contents = messages.Select(m => new
                     {
-                        role = message.IsUser ? "user" : "model",
-                        parts = new List<object>
-                        {
-                            new { text = message.Text }
-                        }
-                    });
-                }
-
-                var requestBody = new
-                {
-                    contents = geminiMessages,
-                    generationConfig = new
-                    {
-                        temperature = 0.7,
-                        max_output_tokens = 2048,
-                        top_p = 0.95,
-                        top_k = 40
-                    }
+                        role = m.IsFromUser ? "user" : "assistant", // Trasformazione da IsFromUser a role
+                        parts = new[] { new { text = m.Content } }
+                    }).ToArray()
                 };
 
-                _logger.LogInformation("Sending request to Gemini API with {MessageCount} messages", messages.Count);
+                var response = await client.PostAsJsonAsync(requestUrl, requestData);
+                response.EnsureSuccessStatusCode();
 
-                var content = new StringContent(
-                    JsonSerializer.Serialize(requestBody),
-                    Encoding.UTF8,
-                    "application/json");
+                var jsonResponse = await response.Content.ReadFromJsonAsync<GeminiResponse>();
 
-                // Use the correct endpoint format for Gemini Pro chat model
-                var response = await _httpClient.PostAsync(
-                    $"https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent?key={_apiKey}",
-                    content);
+                // Estrai la risposta generata dal modello
+                string textResponse = jsonResponse?.Candidates?
+                    .FirstOrDefault()?.Content?.Parts?
+                    .FirstOrDefault()?.Text ?? string.Empty;
 
-                var responseJson = await response.Content.ReadAsStringAsync();
-
-                _logger.LogInformation("Received response from Gemini API. Status code: {StatusCode}", response.StatusCode);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogError("Gemini API error: {StatusCode}, Response: {Response}",
-                        response.StatusCode, responseJson);
-                    return "Sorry, I encountered an error. Please try again.";
-                }
-
-                // Parse the response
-                var geminiResponse = JsonSerializer.Deserialize<GeminiResponse>(responseJson);
-
-                if (geminiResponse?.candidates == null || geminiResponse.candidates.Count == 0 ||
-                    geminiResponse.candidates[0].content == null ||
-                    geminiResponse.candidates[0].content.parts == null ||
-                    geminiResponse.candidates[0].content.parts.Count == 0)
-                {
-                    _logger.LogError("Invalid Gemini API response format");
-                    return "Sorry, I received an invalid response format. Please try again.";
-                }
-
-                return geminiResponse.candidates[0].content.parts[0].text;
+                _logger.LogInformation("Risposta ricevuta dall'API Gemini");
+                return textResponse;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calling Gemini API");
-                return "Sorry, I encountered an error. Please try again.";
+                _logger.LogError(ex, "Errore durante la chiamata all'API Gemini");
+                throw;
             }
         }
-    }
 
-    public class GeminiResponse
-    {
-        public List<GeminiCandidate> candidates { get; set; }
-        public PromptFeedback promptFeedback { get; set; }
-    }
+        // Classe interna per deserializzare la risposta di Gemini
+        private class GeminiResponse
+        {
+            public List<Candidate> Candidates { get; set; }
 
-    public class GeminiCandidate
-    {
-        public GeminiContent content { get; set; }
-        public string finishReason { get; set; }
-        public int index { get; set; }
-    }
+            public class Candidate
+            {
+                public Content Content { get; set; }
+            }
 
-    public class GeminiContent
-    {
-        public List<GeminiPart> parts { get; set; }
-        public string role { get; set; }
-    }
+            public class Content
+            {
+                public List<Part> Parts { get; set; }
+            }
 
-    public class GeminiPart
-    {
-        public string text { get; set; }
-    }
-
-    public class PromptFeedback
-    {
-        public SafetyRating[] safetyRatings { get; set; }
-    }
-
-    public class SafetyRating
-    {
-        public string category { get; set; }
-        public string probability { get; set; }
+            public class Part
+            {
+                public string Text { get; set; }
+            }
+        }
     }
 }
