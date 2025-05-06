@@ -71,7 +71,7 @@ namespace videoscriptAI.Areas.Identity.Pages.Account
                 return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
             }
 
-            // Tento di fare login con il provider esterno
+            // Sign in con provider esterno
             var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
 
             if (result.Succeeded)
@@ -85,7 +85,7 @@ namespace videoscriptAI.Areas.Identity.Pages.Account
                 return RedirectToPage("./Lockout");
             }
 
-            // Se l'utente non ha un account, cerco se esiste un utente con la stessa email
+            // Cerco utente esistente con la stessa email
             var email = info.Principal.FindFirstValue(ClaimTypes.Email);
             if (email != null)
             {
@@ -93,7 +93,7 @@ namespace videoscriptAI.Areas.Identity.Pages.Account
 
                 if (user != null)
                 {
-                    // Aggiungo il login esterno all'utente esistente
+                    // Aggiungo login esterno all'utente esistente
                     var addLoginResult = await _userManager.AddLoginAsync(user, info);
                     if (addLoginResult.Succeeded)
                     {
@@ -103,7 +103,7 @@ namespace videoscriptAI.Areas.Identity.Pages.Account
                 }
             }
 
-            // Se arrivo qui mostro la form per completare la registrazione
+            // Mostro form per completare registrazione
             ReturnUrl = returnUrl;
             ProviderDisplayName = info.ProviderDisplayName;
 
@@ -122,18 +122,18 @@ namespace videoscriptAI.Areas.Identity.Pages.Account
             var info = await _signInManager.GetExternalLoginInfoAsync();
             if (info == null)
             {
-                ErrorMessage = "Errore nel caricamento delle informazioni di login esterno durante la conferma.";
+                ErrorMessage = "Errore nel caricamento delle informazioni di login esterno.";
                 return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
             }
 
             if (ModelState.IsValid)
             {
-                // Cerco se esiste già un utente con questa email
+                // Cerco utente esistente con stessa email
                 var existingUser = await _userManager.FindByEmailAsync(Input.Email);
 
                 if (existingUser != null)
                 {
-                    // Aggiungo il login esterno all'utente esistente
+                    // Aggiungo login esterno all'utente esistente
                     var addLoginResult = await _userManager.AddLoginAsync(existingUser, info);
                     if (addLoginResult.Succeeded)
                     {
@@ -149,13 +149,13 @@ namespace videoscriptAI.Areas.Identity.Pages.Account
                     return Page();
                 }
 
-                // Creo un nuovo utente usando un username unico (non l'email)
+                // Creo un nuovo utente con username univoco
                 var userId = Guid.NewGuid().ToString();
                 var username = $"user_{userId.Substring(0, 8)}";
 
                 var user = new ApplicationUser
                 {
-                    UserName = username,  // Username univoco
+                    UserName = username,  // Username casuale invece dell'email
                     Email = Input.Email,
                     EmailConfirmed = true
                 };
@@ -167,7 +167,7 @@ namespace videoscriptAI.Areas.Identity.Pages.Account
                     result = await _userManager.AddLoginAsync(user, info);
                     if (result.Succeeded)
                     {
-                        _logger.LogInformation("Utente creato con il provider {Name}.", info.LoginProvider);
+                        _logger.LogInformation("Utente creato con provider {Name}.", info.LoginProvider);
                         await _signInManager.SignInAsync(user, isPersistent: false);
                         return LocalRedirect(returnUrl);
                     }
