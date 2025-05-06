@@ -1,0 +1,74 @@
+﻿@page
+@model videoscriptAI.Pages.VideoActionsModel
+@{
+    ViewData["Title"] = "Azioni Video";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Cosa vuoi fare con questo video?</h3>
+                </div>
+                <div class="card-body">
+                    @if (Model.VideoType == "youtube")
+                    {
+                        <div class="mb-4">
+                            <h4>Video YouTube</h4>
+                            <div class="embed-responsive embed-responsive-16by9">
+                                <iframe class="embed-responsive-item"
+                                        src="https://www.youtube.com/embed/@Model.YoutubeVideoId"
+                                        allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <h4 class="mb-3">File video caricato: @Model.VideoFileName</h4>
+                    }
+
+                    <h4 class="mt-4">Seleziona un'azione da eseguire:</h4>
+                    <form method="post">
+                        <input type="hidden" name="chatId" value="@Model.ChatId" />
+
+                        <div class="list-group mt-3">
+                            <button type="submit" name="action" value="summarize" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Riassumi il video</h5>
+                                </div>
+                                <p class="mb-1">Crea un riassunto conciso dei punti principali del video.</p>
+                            </button>
+
+                            <button type="submit" name="action" value="transcript" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Genera trascrizione</h5>
+                                </div>
+                                <p class="mb-1">Converti il parlato in testo con timestamp.</p>
+                            </button>
+
+                            <button type="submit" name="action" value="script" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Crea script video</h5>
+                                </div>
+                                <p class="mb-1">Genera uno script basato sul contenuto del video.</p>
+                            </button>
+
+                            <button type="submit" name="action" value="custom" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">Richiesta personalizzata</h5>
+                                </div>
+                                <textarea name="customPrompt" class="form-control mt-2" rows="3"
+                                          placeholder="Scrivi una richiesta personalizzata per l'analisi del video..."></textarea>
+                            </button>
+                        </div>
+
+                        <div class="mt-3 text-right">
+                            <a href="/" class="btn btn-secondary">Annulla</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

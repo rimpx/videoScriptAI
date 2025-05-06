@@ -1,7 +1,7 @@
-﻿@page
-@model videoscriptAI.Pages.ChatModel
+﻿@page "{id:int}"
+@model videoscriptAI.Pages.Chat.ChatModel
 @{
-    ViewData["Title"] = "AI Chat";
+    ViewData["Title"] = "Chat";
 }
 
 <div class="container-fluid mt-4">
@@ -10,17 +10,15 @@
         <div class="col-md-3 chat-sidebar">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5>Le tue chat</h5>
-                <form method="post" asp-page-handler="NewChat">
-                    <button type="submit" class="btn btn-sm btn-primary">
-                        <i class="fas fa-plus"></i> Nuova Chat
-                    </button>
-                </form>
+                <a href="/" class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus"></i> Nuova Chat
+                </a>
             </div>
-            
+
             <div class="list-group chat-history">
                 @foreach (var item in Model.ChatHistory)
                 {
-                    <a href="/Chat?id=@item.Id" class="list-group-item list-group-item-action @(Model.CurrentChatId == item.Id ? "active" : "")">
+                    <a href="/Chat/Chat/@item.Id" class="list-group-item list-group-item-action @(Model.CurrentChat?.Id == item.Id ? "active" : "")">
                         <div class="d-flex w-100 justify-content-between">
                             <h6 class="mb-1">@item.Title</h6>
                             <small>@item.CreatedAt.ToString("dd/MM/yyyy")</small>
@@ -33,150 +31,54 @@
         <!-- Area principale della chat -->
         <div class="col-md-9">
             <div class="chat-container">
-                <div class="chat-messages" id="chatMessages">
-                    @foreach (var message in Model.ChatMessages)
-                    {
-                        <div class="message @(message.IsUser ? "user-message" : "ai-message")">
-                            <div class="message-content">
-                                <div class="message-text">
-                                    @Html.Raw(message)
-                                </div>
-                                <div class="message-time">
-                                    @message.Timestamp.ToString("HH:mm")
+                @if (Model.CurrentChat != null)
+                {
+                    <div class="chat-header">
+                        <h4>@Model.CurrentChat.Title</h4>
+                    </div>
+
+                    <div class="chat-messages" id="chatMessages">
+                        @foreach (var message in Model.ChatContents)
+                        {
+                            <div class="message @(message.IsFromUser ? "user-message" : "ai-message")">
+                                <div class="message-content">
+                                    <div class="message-text">
+                                        @Html.Raw(message.Content.Replace("\n", "<br>"))
+                                    </div>
+                                    <div class="message-time">
+                                        @message.CreatedAt.ToString("HH:mm")
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    }
-                </div>
-
-                <!-- Indicatore di digitazione -->
-                <div id="typingIndicator" class="typing-indicator d-none">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                </div>
-
-                <!-- Form di invio messaggi -->
-                <form method="post" id="messageForm" asp-page-handler="SendMessage" class="message-form mt-3">
-                    <input type="hidden" id="currentChatId" name="CurrentChatId" value="@Model.CurrentChatId" />
-                    <div class="input-group">
-                        <textarea asp-for="NewMessage" id="messageInput" class="form-control" 
-                                  placeholder="Scrivi il tuo messaggio..." rows="2" 
-                                  required></textarea>
-                        <div class="input-group-append">
-                            <button type="submit" id="sendButton" class="btn btn-primary">
-                                <i class="fas fa-paper-plane"></i> Invia
-                            </button>
-                        </div>
+                        }
                     </div>
-                </form>
+
+                    <!-- Form di invio messaggi -->
+                    <form method="post" class="message-form mt-3">
+                        <input type="hidden" name="chatId" value="@Model.CurrentChat.Id" />
+                        @Html.AntiForgeryToken()
+                        <div class="input-group">
+                            <textarea name="message" class="form-control" placeholder="Scrivi il tuo messaggio..." rows="2" required></textarea>
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Invia
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <div class="text-center my-5">
+                        <h3>Seleziona una chat o iniziane una nuova</h3>
+                        <p>Carica un video o un URL di YouTube dalla pagina iniziale per iniziare.</p>
+                        <a href="/" class="btn btn-primary mt-3">Torna alla home</a>
+                    </div>
+                }
             </div>
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        $(document).ready(function () {
-            // Scroll automatico in fondo alla chat
-            function scrollToBottom() {
-                const chatContainer = document.getElementById('chatMessages');
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-            
-            // Esegui subito lo scroll
-            scrollToBottom();
-            
-            // Gestione invio messaggi con AJAX
-            $('#messageForm').submit(function (e) {
-                e.preventDefault();
-                
-                const message = $('#messageInput').val().trim();
-                if (!message) return;
-                
-                // Disabilita il form durante l'elaborazione
-                $('#sendButton').prop('disabled', true);
-                $('#messageInput').prop('disabled', true);
-                
-                // Mostra indicatore di digitazione
-                $('#typingIndicator').removeClass('d-none');
-                
-                $.ajax({
-                    url: '/Chat?handler=SendMessage',
-                    type: 'POST',
-                    data: {
-                        NewMessage: message,
-                        CurrentChatId: $('#currentChatId').val()
-                    },
-                    headers: {
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    success: function (response) {
-                        if (response.success) {
-                            // Aggiungi messaggio utente
-                            const userMessageHtml = `
-                                <div class="message user-message">
-                                    <div class="message-content">
-                                        <div class="message-text">
-                                            ${response.userMessage.formattedText}
-                                        </div>
-                                        <div class="message-time">
-                                            ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                            $('#chatMessages').append(userMessageHtml);
-                            
-                            // Aggiungi risposta AI
-                            const aiMessageHtml = `
-                                <div class="message ai-message">
-                                    <div class="message-content">
-                                        <div class="message-text">
-                                            ${response.aiMessage.formattedText}
-                                        </div>
-                                        <div class="message-time">
-                                            ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                            $('#chatMessages').append(aiMessageHtml);
-                            
-                            // Aggiorna ID chat corrente se è una nuova chat
-                            if ($('#currentChatId').val() === '0') {
-                                $('#currentChatId').val(response.chatId);
-                                history.pushState(null, '', `/Chat?id=${response.chatId}`);
-                            }
-                            
-                            // Pulisci input e scroll
-                            $('#messageInput').val('');
-                            scrollToBottom();
-                        } else {
-                            console.error("Errore:", response.error);
-                            alert("Si è verificato un errore. Riprova più tardi.");
-                        }
-                    },
-                    error: function () {
-                        alert("Si è verificato un errore nella connessione. Riprova più tardi.");
-                    },
-                    complete: function () {
-                        // Riabilita form e nascondi indicatore
-                        $('#sendButton').prop('disabled', false);
-                        $('#messageInput').prop('disabled', false);
-                        $('#typingIndicator').addClass('d-none');
-                    }
-                });
-            });
-            
-            // Ridimensionamento automatico textarea
-            $('#messageInput').on('input', function () {
-                this.style.height = 'auto';
-                this.style.height = (this.scrollHeight) + 'px';
-            });
-        });
-    </script>
-}
 
 <style>
     .chat-container {
@@ -187,93 +89,85 @@
         border-radius: 8px;
         overflow: hidden;
     }
-    
+
+    .chat-header {
+        padding: 15px;
+        background-color: #007bff;
+        color: white;
+    }
+
     .chat-messages {
         flex: 1;
         overflow-y: auto;
         padding: 15px;
     }
-    
+
     .message {
         display: flex;
         margin-bottom: 15px;
     }
-    
+
     .user-message {
         justify-content: flex-end;
     }
-    
+
     .ai-message {
         justify-content: flex-start;
     }
-    
+
     .message-content {
         max-width: 70%;
         padding: 10px 15px;
         border-radius: 18px;
         position: relative;
     }
-    
+
     .user-message .message-content {
         background-color: #007bff;
         color: white;
         border-top-right-radius: 4px;
     }
-    
+
     .ai-message .message-content {
         background-color: #e9ecef;
         color: #333;
         border-top-left-radius: 4px;
     }
-    
+
     .message-time {
         font-size: 0.7rem;
         opacity: 0.7;
         margin-top: 5px;
         text-align: right;
     }
-    
+
     .message-form {
         padding: 15px;
         background-color: #fff;
         border-top: 1px solid #dee2e6;
     }
-    
+
     .chat-sidebar {
         background-color: #f8f9fa;
         border-right: 1px solid #dee2e6;
         height: calc(100vh - 180px);
         overflow-y: auto;
     }
-    
+
     .chat-history .list-group-item.active {
         background-color: #007bff;
         border-color: #007bff;
     }
-    
-    /* Typing indicator */
-    .typing-indicator {
-        background-color: #e9ecef;
-        width: fit-content;
-        border-radius: 50px;
-        padding: 10px 15px;
-        display: flex;
-        align-items: center;
-        margin-left: 15px;
-    }
-    
-    .typing-dot {
-        height: 8px;
-        width: 8px;
-        margin: 0 2px;
-        background-color: #666;
-        border-radius: 50%;
-        animation: typing 1s infinite ease-in-out;
-    }
-    
-    .typing-dot:nth-child(1) { animation-delay: 0s; }
-    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-    
-   
 </style>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Scroll automatico in fondo alla chat
+            const chatContainer = document.getElementById('chatMessages');
+            if (chatContainer) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        });
+    </script>
+}
