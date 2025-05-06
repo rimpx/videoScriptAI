@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using videoscriptAI.Data;
 using videoscriptAI.Models;
 using videoscriptAI.Services;
-using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,16 +22,15 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options => {
 })
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
-// Configurazione autenticazione con solo Google OAuth
-builder.Services.AddAuthentication(options => {
-    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-})
-.AddGoogle(options => {
-    var googleAuthSection = builder.Configuration.GetSection("Authentication:Google");
-    options.ClientId = googleAuthSection["ClientId"];
-    options.ClientSecret = googleAuthSection["ClientSecret"];
-    options.CallbackPath = "/signin-google";
+// Estendi l'autenticazione con Google invece di sovrascriverla
+builder.Services.AddAuthentication()
+.AddGoogle(googleOptions =>
+{
+    googleOptions.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+    googleOptions.Scope.Add("email");
+    googleOptions.Scope.Add("profile");
+    googleOptions.CallbackPath = "/signin-google";
 });
 
 // Configura i cookie
