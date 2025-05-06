@@ -12,16 +12,16 @@ using videoscriptAI.Models;
 namespace videoscriptAI.Areas.Identity.Pages.Account
 {
     [AllowAnonymous]
-    public class ExternalLoginModel : PageModel
+    public class ExternalLogin : PageModel
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly ILogger<ExternalLoginModel> _logger;
+        private readonly ILogger<ExternalLogin> _logger;
 
-        public ExternalLoginModel(
+        public ExternalLogin(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
-            ILogger<ExternalLoginModel> logger)
+            ILogger<ExternalLogin> logger)
         {
             _signInManager = signInManager;
             _userManager = userManager;
