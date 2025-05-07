@@ -4,165 +4,368 @@
     ViewData["Title"] = "Chat";
 }
 
-<div class="container-fluid mt-4">
-    <div class="row">
-        <!-- Sidebar con cronologia chat -->
-        <div class="col-md-3 chat-sidebar">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5>Le tue chat</h5>
-                <a href="/" class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus"></i> Nuova Chat
+<div class="chat-layout">
+    <!-- Sidebar con cronologia chat -->
+    <div class="chat-sidebar">
+        <div class="sidebar-header">
+            <h2>Le tue chat</h2>
+            <a href="/" class="btn btn-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+        </div>
+
+        <div class="chat-history">
+            @foreach (var item in Model.ChatHistory)
+            {
+                <a href="/Chat/Chat/@item.Id" class="chat-history-item @(Model.CurrentChat?.Id == item.Id ? "active" : "")">
+                    <div class="chat-item-content">
+                        <h3 class="chat-item-title">@item.Title</h3>
+                        <span class="chat-item-date">@item.CreatedAt.ToString("dd/MM/yyyy")</span>
+                    </div>
                 </a>
-            </div>
-
-            <div class="list-group chat-history">
-                @foreach (var item in Model.ChatHistory)
-                {
-                    <a href="/Chat/Chat/@item.Id" class="list-group-item list-group-item-action @(Model.CurrentChat?.Id == item.Id ? "active" : "")">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1">@item.Title</h6>
-                            <small>@item.CreatedAt.ToString("dd/MM/yyyy")</small>
-                        </div>
-                    </a>
-                }
-            </div>
+            }
         </div>
+    </div>
 
-        <!-- Area principale della chat -->
-        <div class="col-md-9">
-            <div class="chat-container">
-                @if (Model.CurrentChat != null)
+    <!-- Area principale della chat -->
+    <div class="chat-main">
+        @if (Model.CurrentChat != null)
+        {
+            <div class="chat-header">
+                <h2>@Model.CurrentChat.Title</h2>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                @foreach (var message in Model.ChatContents)
                 {
-                    <div class="chat-header">
-                        <h4>@Model.CurrentChat.Title</h4>
-                    </div>
-
-                    <div class="chat-messages" id="chatMessages">
-                        @foreach (var message in Model.ChatContents)
-                        {
-                            <div class="message @(message.IsFromUser ? "user-message" : "ai-message")">
-                                <div class="message-content">
-                                    <div class="message-text">
-                                        @Html.Raw(message.Content.Replace("\n", "<br>"))
-                                    </div>
-                                    <div class="message-time">
-                                        @message.CreatedAt.ToString("HH:mm")
-                                    </div>
-                                </div>
+                    <div class="message-wrapper @(message.IsFromUser ? "user-message" : "ai-message")">
+                        <div class="message">
+                            <div class="message-text">
+                                @Html.Raw(message.Content.Replace("\n", "<br>"))
                             </div>
-                        }
-                    </div>
-
-                    <!-- Form di invio messaggi -->
-                    <form method="post" class="message-form mt-3">
-                        <input type="hidden" name="chatId" value="@Model.CurrentChat.Id" />
-                        @Html.AntiForgeryToken()
-                        <div class="input-group">
-                            <textarea name="message" class="form-control" placeholder="Scrivi il tuo messaggio..." rows="2" required></textarea>
-                            <div class="input-group-append">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-paper-plane"></i> Invia
-                                </button>
+                            <div class="message-time">
+                                @message.CreatedAt.ToString("HH:mm")
                             </div>
                         </div>
-                    </form>
-                }
-                else
-                {
-                    <div class="text-center my-5">
-                        <h3>Seleziona una chat o iniziane una nuova</h3>
-                        <p>Carica un video o un URL di YouTube dalla pagina iniziale per iniziare.</p>
-                        <a href="/" class="btn btn-primary mt-3">Torna alla home</a>
                     </div>
                 }
             </div>
-        </div>
+
+            <!-- Form di invio messaggi -->
+            <form method="post" class="message-form">
+                <input type="hidden" name="chatId" value="@Model.CurrentChat.Id" />
+                @Html.AntiForgeryToken()
+                <div class="message-input-container">
+                    <textarea name="message" class="message-input" placeholder="Scrivi il tuo messaggio..." rows="1" required></textarea>
+                    <button type="submit" class="send-button">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        }
+        else
+        {
+            <div class="empty-state">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 12H8.01M12 12H12.01M16 12H16.01M21 12C21 16.418 16.97 20 12 20C10.5286 20 9.14429 19.7034 7.94351 19.1722C7.3411 18.902 7.03989 18.7669 6.86647 18.7114C6.70323 18.6591 6.60206 18.6289 6.44213 18.6004C6.27253 18.5701 6.03501 18.5777 5.55997 18.5929L3.09863 18.6741C2.7512 18.6857 2.5775 18.6914 2.44542 18.6375C2.33147 18.5907 2.24282 18.5021 2.19605 18.3881C2.14216 18.256 2.14852 18.0823 2.16124 17.7349L2.2447 15.2635C2.25989 14.7885 2.26749 14.551 2.23723 14.3814C2.20876 14.2215 2.17853 14.1203 2.12622 13.9571C2.07069 13.7837 1.93558 13.4825 1.66537 12.8801C1.0923 11.6795 0.75 10.3595 0.75 9C0.75 4.58172 4.78 1 9.75 1C14.22 1 17.9199 3.85001 18.6175 7.5" stroke="#93B7BE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <h3>Seleziona una chat o iniziane una nuova</h3>
+                <p>Carica un video o un URL di YouTube dalla pagina iniziale per iniziare.</p>
+                <a href="/" class="btn btn-primary">Torna alla home</a>
+            </div>
+        }
     </div>
 </div>
 
 <style>
-    .chat-container {
+    /* Layout principale */
+    .chat-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 20px;
+        height: calc(100vh - 100px);
+        margin: 0;
+    }
+    
+    /* Sidebar */
+    .chat-sidebar {
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 180px);
-        background-color: #f8f9fa;
-        border-radius: 8px;
         overflow: hidden;
     }
-
+    
+    .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #E5E5E7;
+    }
+    
+    .sidebar-header h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2D3047;
+    }
+    
+    .btn-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #F5F5F7;
+        color: #2D3047;
+        transition: all 150ms ease;
+    }
+    
+    .btn-icon:hover {
+        background-color: #E5E5E7;
+    }
+    
+    /* Cronologia chat */
+    .chat-history {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px 0;
+    }
+    
+    .chat-history-item {
+        display: flex;
+        padding: 12px 20px;
+        text-decoration: none;
+        color: #1D1D1F;
+        transition: background-color 150ms ease;
+        border-left: 3px solid transparent;
+    }
+    
+    .chat-history-item:hover {
+        background-color: #F5F5F7;
+    }
+    
+    .chat-history-item.active {
+        background-color: rgba(45, 48, 71, 0.05);
+        border-left: 3px solid #2D3047;
+    }
+    
+    .chat-item-content {
+        width: 100%;
+    }
+    
+    .chat-item-title {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 500;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .chat-item-date {
+        font-size: 0.75rem;
+        color: #86868B;
+    }
+    
+    /* Area principale chat */
+    .chat-main {
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
     .chat-header {
-        padding: 15px;
-        background-color: #007bff;
+        padding: 16px 24px;
+        background-color: #2D3047;
         color: white;
     }
-
+    
+    .chat-header h2 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 500;
+    }
+    
+    /* Area messaggi */
     .chat-messages {
         flex: 1;
         overflow-y: auto;
-        padding: 15px;
-    }
-
-    .message {
+        padding: 24px;
         display: flex;
-        margin-bottom: 15px;
+        flex-direction: column;
+        gap: 16px;
+        background-color: #F5F5F7;
     }
-
+    
+    .message-wrapper {
+        display: flex;
+    }
+    
     .user-message {
         justify-content: flex-end;
     }
-
+    
     .ai-message {
         justify-content: flex-start;
     }
-
-    .message-content {
+    
+    .message {
         max-width: 70%;
-        padding: 10px 15px;
-        border-radius: 18px;
-        position: relative;
     }
-
-    .user-message .message-content {
-        background-color: #007bff;
+    
+    .message-text {
+        padding: 12px 16px;
+        border-radius: 16px;
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 4px;
+    }
+    
+    .user-message .message-text {
+        background-color: #2D3047;
         color: white;
-        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
     }
-
-    .ai-message .message-content {
-        background-color: #e9ecef;
-        color: #333;
-        border-top-left-radius: 4px;
+    
+    .ai-message .message-text {
+        background-color: white;
+        color: #1D1D1F;
+        border-bottom-left-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
-
+    
     .message-time {
         font-size: 0.7rem;
-        opacity: 0.7;
-        margin-top: 5px;
+        color: #86868B;
         text-align: right;
     }
-
+    
+    .user-message .message-time {
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    /* Form invio messaggi */
     .message-form {
-        padding: 15px;
-        background-color: #fff;
-        border-top: 1px solid #dee2e6;
+        padding: 16px 24px;
+        background-color: white;
+        border-top: 1px solid #E5E5E7;
     }
-
-    .chat-sidebar {
-        background-color: #f8f9fa;
-        border-right: 1px solid #dee2e6;
-        height: calc(100vh - 180px);
-        overflow-y: auto;
+    
+    .message-input-container {
+        display: flex;
+        gap: 12px;
+        align-items: flex-end;
     }
-
-    .chat-history .list-group-item.active {
-        background-color: #007bff;
-        border-color: #007bff;
+    
+    .message-input {
+        flex: 1;
+        padding: 12px 16px;
+        border-radius: 24px;
+        border: 1px solid #E5E5E7;
+        resize: none;
+        max-height: 120px;
+        font-family: inherit;
+        font-size: 0.95rem;
+        background-color: #F5F5F7;
+        transition: border-color 150ms ease;
     }
+    
+    .message-input:focus {
+        outline: none;
+        border-color: #2D3047;
+    }
+    
+    .send-button {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #2D3047;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background-color 150ms ease;
+    }
+    
+    .send-button:hover {
+        background-color: #3D4159;
+    }
+    
+    /* Stato vuoto */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        height: 100%;
+        padding: 32px;
+        color: #86868B;
+    }
+    
+    .empty-state svg {
+        margin-bottom: 24px;
+    }
+    
+    .empty-state h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2D3047;
+        margin-bottom: 12px;
+    }
+    
+    .empty-state p {
+        margin-bottom: 24px;
+        max-width: 400px;
+    }
+    
+    .btn-primary {
+        background-color: #2D3047;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background-color 150ms ease;
+    }
+    
+    .btn-primary:hover {
+        background-color: #3D4159;
+    }
+    
+    /* Responsive */
+   
+   
 </style>
 
 @section Scripts {
     <script>
-        $(document).ready(function () {
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-resize textarea
+            const textarea = document.querySelector('.message-input');
+            if (textarea) {
+                textarea.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+                });
+            }
+            
             // Scroll automatico in fondo alla chat
             const chatContainer = document.getElementById('chatMessages');
             if (chatContainer) {

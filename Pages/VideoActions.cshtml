@@ -4,71 +4,279 @@
     ViewData["Title"] = "Azioni Video";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">Cosa vuoi fare con questo video?</h3>
-                </div>
-                <div class="card-body">
-                    @if (Model.VideoType == "youtube")
-                    {
-                        <div class="mb-4">
-                            <h4>Video YouTube</h4>
-                            <div class="embed-responsive embed-responsive-16by9">
-                                <iframe class="embed-responsive-item"
-                                        src="https://www.youtube.com/embed/@Model.YoutubeVideoId"
-                                        allowfullscreen></iframe>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <h4 class="mb-3">File video caricato: @Model.VideoFileName</h4>
-                    }
-
-                    <h4 class="mt-4">Seleziona un'azione da eseguire:</h4>
-                    <form method="post">
-                        <input type="hidden" name="chatId" value="@Model.ChatId" />
-
-                        <div class="list-group mt-3">
-                            <button type="submit" name="action" value="summarize" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1">Riassumi il video</h5>
-                                </div>
-                                <p class="mb-1">Crea un riassunto conciso dei punti principali del video.</p>
-                            </button>
-
-                            <button type="submit" name="action" value="transcript" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1">Genera trascrizione</h5>
-                                </div>
-                                <p class="mb-1">Converti il parlato in testo con timestamp.</p>
-                            </button>
-
-                            <button type="submit" name="action" value="script" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1">Crea script video</h5>
-                                </div>
-                                <p class="mb-1">Genera uno script basato sul contenuto del video.</p>
-                            </button>
-
-                            <button type="submit" name="action" value="custom" class="list-group-item list-group-item-action">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h5 class="mb-1">Richiesta personalizzata</h5>
-                                </div>
-                                <textarea name="customPrompt" class="form-control mt-2" rows="3"
-                                          placeholder="Scrivi una richiesta personalizzata per l'analisi del video..."></textarea>
-                            </button>
-                        </div>
-
-                        <div class="mt-3 text-right">
-                            <a href="/" class="btn btn-secondary">Annulla</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+<div class="video-actions-container animate-fade-in">
+    <div class="page-header">
+        <h1 class="page-title">Cosa vuoi fare con questo video?</h1>
+        <p class="page-subtitle">Seleziona un'azione per analizzare o trasformare il contenuto del video</p>
     </div>
+
+    <div class="card media-card">
+        @if (Model.VideoType == "youtube")
+        {
+            <div class="video-container">
+                <iframe src="https://www.youtube.com/embed/@Model.YoutubeVideoId"
+                        allowfullscreen
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+                </iframe>
+            </div>
+            <div class="media-info">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17 20H7C4 20 2 18 2 15V9C2 6 4 4 7 4H17C20 4 22 6 22 9V15C22 18 20 20 17 20Z" stroke="#F77A52" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M11.4 9.5L13.9 11C14.8 11.6 14.8 12.5 13.9 13.1L11.4 14.6C10.4 15.2 9.60001 14.7 9.60001 13.6V10.6C9.60001 9.3 10.4 8.9 11.4 9.5Z" stroke="#F77A52" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>Video YouTube</span>
+            </div>
+        }
+        else
+        {
+            <div class="media-info">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="#F77A52" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M9.1001 12V10.52C9.1001 8.60999 10.4501 7.83999 12.1001 8.78999L13.3801 9.52999L14.6601 10.27C16.3101 11.22 16.3101 12.78 14.6601 13.73L13.3801 14.47L12.1001 15.21C10.4501 16.16 9.1001 15.38 9.1001 13.48V12Z" stroke="#F77A52" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>File caricato: <strong>@Model.VideoFileName</strong></span>
+            </div>
+        }
+    </div>
+
+    <form method="post" class="actions-form">
+        <input type="hidden" name="chatId" value="@Model.ChatId" />
+
+        <h2 class="section-title">Seleziona un'azione</h2>
+
+        <div class="actions-grid">
+            <button type="submit" name="action" value="summarize" class="action-card">
+                <div class="action-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 10H16M8 14H12M9 18H15C16.6569 18 18 16.6569 18 15V9C18 7.34315 16.6569 6 15 6H9C7.34315 6 6 7.34315 6 9V15C6 16.6569 7.34315 18 9 18Z" stroke="#2D3047" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Riassumi il video</h3>
+                    <p class="action-description">Crea un riassunto conciso dei punti principali del video.</p>
+                </div>
+            </button>
+
+            <button type="submit" name="action" value="transcript" class="action-card">
+                <div class="action-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 21L3 3M21 11L7 11M21 3L7 3M21 19L7 19M17 15L17 7" stroke="#2D3047" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Genera trascrizione</h3>
+                    <p class="action-description">Converti il parlato in testo con timestamp.</p>
+                </div>
+            </button>
+
+            <button type="submit" name="action" value="script" class="action-card">
+                <div class="action-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M8 3H6C4.89543 3 4 3.89543 4 5V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V5C20 3.89543 19.1046 3 18 3H16M12 12H16M8 12H9M8 8H9M8 16H9M12 8H16M12 16H16M10 3C10 2.44772 10.4477 2 11 2H13C13.5523 2 14 2.44772 14 3V5C14 5.55228 13.5523 6 13 6H11C10.4477 6 10 5.55228 10 5V3Z" stroke="#2D3047" stroke-width="1.5" stroke-linecap="round" />
+                    </svg>
+                </div>
+                <div class="action-content">
+                    <h3 class="action-title">Crea script video</h3>
+                    <p class="action-description">Genera uno script basato sul contenuto del video.</p>
+                </div>
+            </button>
+
+            <button type="submit" name="action" value="custom" class="action-card custom-action">
+                <div class="action-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z" stroke="#2D3047" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M12 16V17" stroke="#2D3047" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M12 12.5C12 11 13 10 14 9C15 8 16 7 16 5.5C16 4.5 15.6 3.5 14.75 2.75C13.9 2 12.5 1.5 11 1.5C9.5 1.5 8.10002 2 7.35002 2.75C6.60002 3.5 5.90002 4.5 5.90002 5.5L7.99002 6C7.99002 5.4 8.20002 4.94 8.60002 4.59C9.00002 4.24 9.5 4 10 4C10.5 4 11 4.2 11.4 4.6C11.8 5 12 5.5 12 6C12 6.5 11.8 7 11.4 7.4C11 7.8 10 8.4 10 9.5V12" stroke="#2D3047" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div class="action-content wide-content">
+                    <h3 class="action-title">Richiesta personalizzata</h3>
+                    <p class="action-description">Specifica cosa desideri ottenere da questo video.</p>
+                    <textarea name="customPrompt" class="custom-textarea"
+                              placeholder="Scrivi una richiesta personalizzata per l'analisi del video..."></textarea>
+                </div>
+            </button>
+        </div>
+
+        <div class="form-actions">
+            <a href="/" class="btn btn-outline">Annulla</a>
+        </div>
+    </form>
 </div>
+
+<style>
+    .video-actions-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: var(--spacing-lg);
+    }
+
+    .page-header {
+        margin-bottom: var(--spacing-xl);
+        text-align: center;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .page-subtitle {
+        color: var(--color-text-secondary);
+        font-size: 1.1rem;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .media-card {
+        margin-bottom: var(--spacing-xl);
+        overflow: hidden;
+        padding: 0;
+    }
+
+    .video-container {
+        position: relative;
+        width: 100%;
+        padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    }
+
+    .video-container iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+    }
+
+    .media-info {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-lg);
+        border-top: 1px solid var(--color-border);
+        color: var(--color-text-secondary);
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: var(--spacing-lg);
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .action-card {
+        display: flex;
+        flex-direction: column;
+        padding: var(--spacing-lg);
+        background-color: var(--color-card);
+        border-radius: var(--border-radius-md);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--color-border);
+        cursor: pointer;
+        transition: all var(--transition-normal);
+        text-align: left;
+    }
+
+    .action-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        border-color: var(--color-primary);
+    }
+
+    .action-icon {
+        margin-bottom: var(--spacing-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background-color: rgba(45, 48, 71, 0.05);
+    }
+
+    .action-content {
+        flex: 1;
+    }
+
+    .action-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .action-description {
+        color: var(--color-text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .custom-action {
+        grid-column: 1 / -1;
+    }
+
+    .wide-content {
+        width: 100%;
+    }
+
+    .custom-textarea {
+        width: 100%;
+        margin-top: var(--spacing-md);
+        padding: var(--spacing-md);
+        border-radius: var(--border-radius-sm);
+        border: 1px solid var(--color-border);
+        resize: vertical;
+        min-height: 100px;
+        font-family: inherit;
+        font-size: 0.95rem;
+        background-color: #F5F5F7;
+        transition: border-color var(--transition-fast);
+    }
+
+    .custom-textarea:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px rgba(45, 48, 71, 0.1);
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 20px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 500;
+        transition: all var(--transition-normal);
+        cursor: pointer;
+        text-decoration: none;
+        border: none;
+        font-size: 0.95rem;
+    }
+
+    .btn-outline {
+        background-color: transparent;
+        color: var(--color-primary);
+        border: 1px solid var(--color-border);
+    }
+
+    .btn-outline:hover {
+        background-color: rgba(45, 48, 71, 0.05);
+    }
+
+    
+</style>

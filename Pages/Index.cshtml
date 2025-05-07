@@ -4,53 +4,418 @@
     ViewData["Title"] = "Home";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">Video Script AI</h3>
-                </div>
-                <div class="card-body">
-                    <div class="mb-4">
-                        <p>Benvenuto in VideoScript AI! Puoi:</p>
-                        <ul>
-                            <li>Caricare un file video (fino a 20MB)</li>
-                            <li>Inserire un URL di YouTube</li>
-                            <li>Continuare una chat precedente</li>
-                        </ul>
-                    </div>
+<div class="home-container animate-fade-in">
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">VideoScript AI</h1>
+            <p class="hero-subtitle">Trasforma i tuoi video in script dettagliati e analisi avanzate grazie all'intelligenza artificiale.</p>
+        </div>
+    </div>
 
-                    <div class="mb-4">
-                        <h4>Carica un Video</h4>
-                        <form method="post" enctype="multipart/form-data" asp-page-handler="UploadVideo">
-                            <div class="form-group">
-                                <label for="videoFile">Seleziona un file video (MP4, AVI, etc.):</label>
-                                <input type="file" class="form-control-file" id="videoFile" name="videoFile" accept="video/*">
-                                <small class="form-text text-muted">Max 20MB. Per video più grandi, usa URL YouTube.</small>
-                            </div>
-                            <button type="submit" class="btn btn-primary mt-2">Carica Video</button>
-                        </form>
-                    </div>
+    <div class="card main-card">
+        <div class="options-tabs">
+            <div class="option-tab active" data-target="upload-video">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 22H15C20 22 22 20 22 15V9C22 4 20 2 15 2H9C4 2 2 4 2 9V15C2 20 4 22 9 22Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M9.1001 12V10.52C9.1001 8.60999 10.4501 7.83999 12.1001 8.78999L13.3801 9.52999L14.6601 10.27C16.3101 11.22 16.3101 12.78 14.6601 13.73L13.3801 14.47L12.1001 15.21C10.4501 16.16 9.1001 15.38 9.1001 13.48V12Z" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Carica Video
+            </div>
+            <div class="option-tab" data-target="youtube-url">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17 20H7C4 20 2 18 2 15V9C2 6 4 4 7 4H17C20 4 22 6 22 9V15C22 18 20 20 17 20Z" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M11.4 9.5L13.9 11C14.8 11.6 14.8 12.5 13.9 13.1L11.4 14.6C10.4 15.2 9.60001 14.7 9.60001 13.6V10.6C9.60001 9.3 10.4 8.9 11.4 9.5Z" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                URL YouTube
+            </div>
+        </div>
 
-                    <h4 class="mt-4">Oppure inserisci URL YouTube</h4>
-                    <form method="post" asp-page-handler="ProcessYoutubeUrl">
-                        <div class="form-group">
-                            <label for="youtubeUrl">URL Video YouTube:</label>
-                            <input type="url" class="form-control" id="youtubeUrl" name="youtubeUrl"
-                                   placeholder="https://www.youtube.com/watch?v=...">
-                        </div>
-                        <button type="submit" class="btn btn-primary mt-2">Analizza Video</button>
-                    </form>
-                </div>
+        <div class="option-content" id="upload-video">
+            <div class="option-description">
+                <p>Carica un file video per generare uno script o analizzarlo con l'intelligenza artificiale.</p>
+                <ul class="feature-list">
+                    <li>Supporta formati MP4, AVI, MOV e altri</li>
+                    <li>Dimensione massima: 20MB</li>
+                    <li>Per file più grandi, usa l'opzione YouTube</li>
+                </ul>
             </div>
 
-            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-            {
-                <div class="alert alert-danger mt-4">
-                    <strong>Errore:</strong> @Model.ErrorMessage
+            <form method="post" enctype="multipart/form-data" asp-page-handler="UploadVideo" class="upload-form">
+                <div class="file-upload-container">
+                    <label for="videoFile" class="file-upload-area">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16.44 8.90002C20.04 9.21002 21.51 11.06 21.51 15.11V15.24C21.51 19.71 19.72 21.5 15.25 21.5H8.73998C4.26998 21.5 2.47998 19.71 2.47998 15.24V15.11C2.47998 11.09 3.92998 9.24002 7.46998 8.91002" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M12 15V3.62" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M15.35 5.85L12 2.5L8.65002 5.85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <div class="upload-text">
+                            <span class="upload-title">Trascina qui il tuo video</span>
+                            <span class="upload-subtitle">oppure clicca per selezionare</span>
+                        </div>
+                        <input type="file" class="form-control-file" id="videoFile" name="videoFile" accept="video/*" hidden>
+                    </label>
+                    <div class="selected-file" id="selectedFileName"></div>
                 </div>
-            }
+                <button type="submit" class="btn btn-primary upload-button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12.7 11.7L21.77 3.85C21.92 3.71 22 3.53 22 3.35C22 2.78 21.3 2.5 20.89 2.91L12.7 11.7ZM12.7 11.7L18.24 17.94C18.4 18.11 18.5 18.33 18.5 18.56V19.07C18.5 20.23 16.74 20.45 16.33 19.34L14.73 15.46C14.5 14.99 14.5 14.47 14.73 14.01L12.7 11.7ZM12.7 11.7L2.92001 20.89C2.51001 21.3 2.79001 22 3.36001 22C3.54001 22 3.72001 21.92 3.86001 21.77L12.7 11.7Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Analizza Video
+                </button>
+            </form>
+        </div>
+
+        <div class="option-content hidden" id="youtube-url">
+            <div class="option-description">
+                <p>Inserisci l'URL di un video YouTube per generare uno script o analizzarlo con l'intelligenza artificiale.</p>
+                <ul class="feature-list">
+                    <li>Supporta qualsiasi video pubblico di YouTube</li>
+                    <li>Nessun limite di dimensione</li>
+                    <li>Analisi più veloce per video brevi</li>
+                </ul>
+            </div>
+
+            <form method="post" asp-page-handler="ProcessYoutubeUrl" class="youtube-form">
+                <div class="form-group">
+                    <div class="input-with-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="input-icon">
+                            <path d="M17 20H7C4 20 2 18 2 15V9C2 6 4 4 7 4H17C20 4 22 6 22 9V15C22 18 20 20 17 20Z" stroke="#93B7BE" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M11.4 9.5L13.9 11C14.8 11.6 14.8 12.5 13.9 13.1L11.4 14.6C10.4 15.2 9.60001 14.7 9.60001 13.6V10.6C9.60001 9.3 10.4 8.9 11.4 9.5Z" stroke="#93B7BE" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <input type="url" class="form-control" id="youtubeUrl" name="youtubeUrl"
+                               placeholder="https://www.youtube.com/watch?v=..." required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12.7 11.7L21.77 3.85C21.92 3.71 22 3.53 22 3.35C22 2.78 21.3 2.5 20.89 2.91L12.7 11.7ZM12.7 11.7L18.24 17.94C18.4 18.11 18.5 18.33 18.5 18.56V19.07C18.5 20.23 16.74 20.45 16.33 19.34L14.73 15.46C14.5 14.99 14.5 14.47 14.73 14.01L12.7 11.7ZM12.7 11.7L2.92001 20.89C2.51001 21.3 2.79001 22 3.36001 22C3.54001 22 3.72001 21.92 3.86001 21.77L12.7 11.7Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Analizza Video
+                </button>
+            </form>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="error-message">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z" stroke="#FF3B30" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M12 8V13" stroke="#FF3B30" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M11.9945 16H12.0035" stroke="#FF3B30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <p>@Model.ErrorMessage</p>
+            </div>
+        }
+    </div>
+
+    <div class="recent-chats card">
+        <h2 class="section-title">Le tue conversazioni recenti</h2>
+        <div class="empty-chats">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 12H8.01M12 12H12.01M16 12H16.01M21 12C21 16.418 16.97 20 12 20C10.5286 20 9.14429 19.7034 7.94351 19.1722C7.3411 18.902 7.03989 18.7669 6.86647 18.7114C6.70323 18.6591 6.60206 18.6289 6.44213 18.6004C6.27253 18.5701 6.03501 18.5777 5.55997 18.5929L3.09863 18.6741C2.7512 18.6857 2.5775 18.6914 2.44542 18.6375C2.33147 18.5907 2.24282 18.5021 2.19605 18.3881C2.14216 18.256 2.14852 18.0823 2.16124 17.7349L2.2447 15.2635C2.25989 14.7885 2.26749 14.551 2.23723 14.3814C2.20876 14.2215 2.17853 14.1203 2.12622 13.9571C2.07069 13.7837 1.93558 13.4825 1.66537 12.8801C1.0923 11.6795 0.75 10.3595 0.75 9C0.75 4.58172 4.78 1 9.75 1C14.22 1 17.9199 3.85001 18.6175 7.5" stroke="#93B7BE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <p>Non hai ancora conversazioni attive</p>
+            <a href="/Chat/Chat" class="btn btn-outline">Vai alle chat</a>
         </div>
     </div>
 </div>
+
+<style>
+    .home-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: var(--spacing-xl) var(--spacing-lg);
+    }
+
+    .hero-section {
+        margin-bottom: var(--spacing-xl);
+        text-align: center;
+    }
+
+    .hero-title {
+        font-size: 2.5rem;
+        font-weight: 600;
+        color: var(--color-primary);
+        margin-bottom: var(--spacing-sm);
+    }
+
+    .hero-subtitle {
+        font-size: 1.25rem;
+        color: var(--color-text-secondary);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .main-card {
+        margin-bottom: var(--spacing-xl);
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .options-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .option-tab {
+        flex: 1;
+        padding: var(--spacing-lg);
+        text-align: center;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--color-text-secondary);
+        transition: all var(--transition-normal);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-sm);
+    }
+
+        .option-tab svg {
+            stroke: var(--color-text-secondary);
+        }
+
+        .option-tab:hover {
+            background-color: rgba(45, 48, 71, 0.05);
+        }
+
+        .option-tab.active {
+            color: var(--color-primary);
+            border-bottom: 2px solid var(--color-primary);
+        }
+
+            .option-tab.active svg {
+                stroke: var(--color-primary);
+            }
+
+    .option-content {
+        padding: var(--spacing-xl);
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    .option-description {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .feature-list {
+        list-style-type: none;
+        padding-left: 0;
+        margin-top: var(--spacing-md);
+    }
+
+        .feature-list li {
+            position: relative;
+            padding-left: var(--spacing-lg);
+            margin-bottom: var(--spacing-sm);
+        }
+
+            .feature-list li::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 8px;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background-color: var(--color-accent);
+            }
+
+    .file-upload-container {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .file-upload-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 2px dashed var(--color-border);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-xl);
+        cursor: pointer;
+        transition: border-color var(--transition-fast);
+    }
+
+        .file-upload-area:hover {
+            border-color: var(--color-primary);
+        }
+
+        .file-upload-area svg {
+            margin-bottom: var(--spacing-lg);
+            stroke: var(--color-secondary);
+        }
+
+    .upload-text {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .upload-title {
+        font-weight: 500;
+        font-size: 1.1rem;
+        margin-bottom: var(--spacing-xs);
+    }
+
+    .upload-subtitle {
+        color: var(--color-text-secondary);
+    }
+
+    .selected-file {
+        margin-top: var(--spacing-md);
+        text-align: center;
+        font-weight: 500;
+        color: var(--color-primary);
+    }
+
+    .upload-button {
+        width: 100%;
+    }
+
+    .form-group {
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .input-with-icon {
+        position: relative;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: var(--spacing-md);
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 12px 12px 48px;
+        border-radius: var(--border-radius-md);
+        border: 1px solid var(--color-border);
+        font-size: 1rem;
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px rgba(45, 48, 71, 0.2);
+        }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-sm);
+        padding: 12px 24px;
+        border-radius: var(--border-radius-md);
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: background-color var(--transition-fast);
+    }
+
+    .btn-primary {
+        background-color: var(--color-primary);
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background-color: #3D4159;
+        }
+
+    .btn-outline {
+        background-color: transparent;
+        color: var(--color-primary);
+        border: 1px solid var(--color-border);
+    }
+
+        .btn-outline:hover {
+            background-color: rgba(45, 48, 71, 0.05);
+        }
+
+    .error-message {
+        margin-top: var(--spacing-lg);
+        padding: var(--spacing-md);
+        background-color: rgba(255, 59, 48, 0.1);
+        border-radius: var(--border-radius-md);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+    }
+
+        .error-message p {
+            margin: 0;
+            color: #FF3B30;
+        }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: var(--spacing-lg);
+        color: var(--color-primary);
+    }
+
+    .recent-chats {
+        padding: var(--spacing-xl);
+    }
+
+    .empty-chats {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        color: var(--color-text-secondary);
+    }
+
+        .empty-chats svg {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .empty-chats p {
+            margin-bottom: var(--spacing-lg);
+        }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab switching
+        const tabs = document.querySelectorAll('.option-tab');
+        const contents = document.querySelectorAll('.option-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.target;
+
+                // Activate current tab
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // Show current content
+                contents.forEach(content => {
+                    content.classList.add('hidden');
+                    if (content.id === target) {
+                        content.classList.remove('hidden');
+                    }
+                });
+            });
+        });
+
+        // File selection display
+        const fileInput = document.getElementById('videoFile');
+        const fileNameDisplay = document.getElementById('selectedFileName');
+
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    fileNameDisplay.textContent = 'File selezionato: ' + this.files[0].name;
+                } else {
+                    fileNameDisplay.textContent = '';
+                }
+            });
+        }
+    });
+</script>
