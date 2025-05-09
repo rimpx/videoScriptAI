@@ -160,11 +160,7 @@ We welcome contributions to make VideoScriptAI even better! Here's how you can c
 5. **Open a Pull Request**  
    Submit your changes for review.
 
----
 
-## 📜 **License**
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ---
 
