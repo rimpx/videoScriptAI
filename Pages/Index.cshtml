@@ -30,6 +30,8 @@
             </div>
         </div>
 
+        
+
         <div class="option-content" id="upload-video">
             <div class="option-description">
                 <p>Carica un file video per generare uno script o analizzarlo con l'intelligenza artificiale.</p>
@@ -108,15 +110,27 @@
         }
     </div>
 
-    <div class="recent-chats card">
-        <h2 class="section-title">Le tue conversazioni recenti</h2>
-        <div class="empty-chats">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M8 12H8.01M12 12H12.01M16 12H16.01M21 12C21 16.418 16.97 20 12 20C10.5286 20 9.14429 19.7034 7.94351 19.1722C7.3411 18.902 7.03989 18.7669 6.86647 18.7114C6.70323 18.6591 6.60206 18.6289 6.44213 18.6004C6.27253 18.5701 6.03501 18.5777 5.55997 18.5929L3.09863 18.6741C2.7512 18.6857 2.5775 18.6914 2.44542 18.6375C2.33147 18.5907 2.24282 18.5021 2.19605 18.3881C2.14216 18.256 2.14852 18.0823 2.16124 17.7349L2.2447 15.2635C2.25989 14.7885 2.26749 14.551 2.23723 14.3814C2.20876 14.2215 2.17853 14.1203 2.12622 13.9571C2.07069 13.7837 1.93558 13.4825 1.66537 12.8801C1.0923 11.6795 0.75 10.3595 0.75 9C0.75 4.58172 4.78 1 9.75 1C14.22 1 17.9199 3.85001 18.6175 7.5" stroke="#93B7BE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <p>Non hai ancora conversazioni attive</p>
-            <a href="/Chat/Chat/1" class="btn btn-outline">Vai alle chat</a>
-        </div>
+    <!-- Nuovo bottone per navigare all'ultima chat -->
+    <div class="last-chat-action">
+        @if (Model.HasChats)
+        {
+            <a href="/Chat/Chat/@Model.LastChatId" class="btn btn-chat-action">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 12H8.01M12 12H12.01M16 12H16.01M21 12C21 16.418 16.97 20 12 20C10.5286 20 9.14429 19.7034 7.94351 19.1722C7.3411 18.902 7.03989 18.7669 6.86647 18.7114C6.70323 18.6591 6.60206 18.6289 6.44213 18.6004C6.27253 18.5701 6.03501 18.5777 5.55997 18.5929L3.09863 18.6741C2.7512 18.6857 2.5775 18.6914 2.44542 18.6375C2.33147 18.5907 2.24282 18.5021 2.19605 18.3881C2.14216 18.256 2.14852 18.0823 2.16124 17.7349L2.2447 15.2635C2.25989 14.7885 2.26749 14.551 2.23723 14.3814C2.20876 14.2215 2.17853 14.1203 2.12622 13.9571C2.07069 13.7837 1.93558 13.4825 1.66537 12.8801C1.0923 11.6795 0.75 10.3595 0.75 9C0.75 4.58172 4.78 1 9.75 1C14.22 1 17.9199 3.85001 18.6175 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                Vai all'ultima chat
+            </a>
+        }
+        else
+        {
+            <div class="no-chats-message">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 12H8.01M12 12H12.01M16 12H16.01M21 12C21 16.418 16.97 20 12 20C10.5286 20 9.14429 19.7034 7.94351 19.1722C7.3411 18.902 7.03989 18.7669 6.86647 18.7114C6.70323 18.6591 6.60206 18.6289 6.44213 18.6004C6.27253 18.5701 6.03501 18.5777 5.55997 18.5929L3.09863 18.6741C2.7512 18.6857 2.5775 18.6914 2.44542 18.6375C2.33147 18.5907 2.24282 18.5021 2.19605 18.3881C2.14216 18.256 2.14852 18.0823 2.16124 17.7349L2.2447 15.2635C2.25989 14.7885 2.26749 14.551 2.23723 14.3814C2.20876 14.2215 2.17853 14.1203 2.12622 13.9571C2.07069 13.7837 1.93558 13.4825 1.66537 12.8801C1.0923 11.6795 0.75 10.3595 0.75 9C0.75 4.58172 4.78 1 9.75 1C14.22 1 17.9199 3.85001 18.6175 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <p>Non hai ancora conversazioni attive</p>
+                <p class="create-chat-hint">Carica un video o inserisci un URL di YouTube per iniziare</p>
+            </div>
+        }
     </div>
 </div>
 
@@ -352,31 +366,40 @@
             color: #FF3B30;
         }
 
-    .section-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: var(--spacing-lg);
-        color: var(--color-primary);
-    }
-
-    .recent-chats {
-        padding: var(--spacing-xl);
-    }
-
-    .empty-chats {
+    /* Stile per il nuovo bottone grande per accedere all'ultima chat */
+    .last-chat-action {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        color: var(--color-text-secondary);
+        justify-content: center;
+        margin-bottom: var(--spacing-xl);
     }
 
-        .empty-chats svg {
-            margin-bottom: var(--spacing-md);
+    .btn-chat-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-md);
+        background-color: #FFFFFF;
+        color: var(--color-primary);
+        padding: 16px 32px;
+        border-radius: var(--border-radius-md);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--color-border);
+        font-weight: 500;
+        font-size: 1.1rem;
+        text-decoration: none;
+        transition: all var(--transition-normal);
+    }
+
+        .btn-chat-action:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--color-primary);
         }
 
-        .empty-chats p {
-            margin-bottom: var(--spacing-lg);
+        .btn-chat-action svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--color-primary);
         }
 </style>
 
