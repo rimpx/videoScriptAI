@@ -97,24 +97,7 @@ Customize the application by updating the `appsettings.json` file. Here's an exa
 }
 ```
 
----
 
-## 🗂️ **Project Structure**
-
-```
-videoScriptAI/
-├── src/
-│   ├── VideoScriptAI.Core/           # Core business logic
-│   ├── VideoScriptAI.Services/       # AI integration services
-│   ├── VideoScriptAI.Web/            # Web interface (HTML, CSS, JS)
-│   └── VideoScriptAI.Console/        # Optional console interface
-├── tests/
-│   ├── VideoScriptAI.Core.Tests/     # Unit tests for core functionality
-│   └── VideoScriptAI.Services.Tests/ # Tests for AI services
-├── docs/                             # Documentation
-├── assets/                           # Images, icons, etc.
-└── Templates/                        # Script templates
-```
 
 ---
 
