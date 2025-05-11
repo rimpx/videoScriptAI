@@ -1,6 +1,6 @@
 # 🚀 VideoScriptAI: Transform Ideas into Captivating Video Scripts
 
-![VideoScriptAI Logo](https://raw.githubusercontent.com/rimpx/videoScriptAI/main/assets/logo.png)
+![VideoScriptAI Logo](logo.png)
 
 ## 🎥 **Your AI-Powered Video Script Assistant**
 
