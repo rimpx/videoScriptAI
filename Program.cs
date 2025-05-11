@@ -12,53 +12,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Registra HttpClientFactory PRIMA di altri servizi che potrebbero dipendere da esso
 builder.Services.AddHttpClient();
 
-// Ottieni connection string per SQL Server
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Inserimento diretto della stringa di connessione
+var connectionString = "workstation id=videoscriptAI.mssql.somee.com;packet size=4096;user id=rimpi_SQLLogin_1;pwd=3lymgrctfg;data source=videoscriptAI.mssql.somee.com;persist security info=False;initial catalog=videoscriptAI;TrustServerCertificate=True";
 Console.WriteLine($"Utilizzando SQL Server: {connectionString}");
 
-// Test della connessione al database all'avvio
-try
-{
-    // Test della connessione (solo all'avvio)
-    using (var connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString))
-    {
-        Console.WriteLine("Tentativo di connessione al database...");
-        connection.Open();
-        Console.WriteLine("Connessione al database riuscita!");
-    }
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"ERRORE di connessione al database: {ex.Message}");
-    // In sviluppo, potremmo voler continuare comunque
-    if (!builder.Environment.IsDevelopment())
-    {
-        throw; // In produzione, meglio fallire velocemente
-    }
-}
-
-// Configurazione del DbContext con SQL Server e ottimizzazioni
+// Configurazione del DbContext con approccio semplificato (simile all'esempio funzionante)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-{
-    options.UseSqlServer(connectionString, sqlServerOptions =>
-    {
-        sqlServerOptions.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(30),
-            errorNumbersToAdd: null);
-
-        // Aumenta il timeout di comando
-        sqlServerOptions.CommandTimeout(60);
-    });
-
-    // Abilita logging dettagliato in sviluppo
-    if (builder.Environment.IsDevelopment())
-    {
-        options.EnableSensitiveDataLogging();
-        options.EnableDetailedErrors();
-        options.LogTo(Console.WriteLine);
-    }
-});
+    options.UseSqlServer(connectionString));
 
 // Configurazione di Identity con ApplicationUser
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => {
@@ -121,33 +81,36 @@ builder.Services.AddScoped<IVideoService, VideoService>();
 
 var app = builder.Build();
 
-// Aggiungi questo codice per garantire che il database sia creato e aggiornato all'avvio
-if (builder.Environment.IsDevelopment())
+// Gestione delle migrazioni
+using (var scope = app.Services.CreateScope())
 {
-    using (var scope = app.Services.CreateScope())
+    var services = scope.ServiceProvider;
+    try
     {
-        var services = scope.ServiceProvider;
-        try
-        {
-            var context = services.GetRequiredService<ApplicationDbContext>();
+        var context = services.GetRequiredService<ApplicationDbContext>();
 
-            // Verifica lo stato del database ed esegui eventuali migrazioni pendenti
-            if (context.Database.GetPendingMigrations().Any())
-            {
-                Console.WriteLine("Applicazione delle migrazioni pendenti...");
-                context.Database.Migrate();
-                Console.WriteLine("Migrazioni applicate con successo!");
-            }
-            else
-            {
-                Console.WriteLine("Database aggiornato, nessuna migrazione pendente.");
-            }
-        }
-        catch (Exception ex)
+        // Assicurati che il database esista
+        context.Database.EnsureCreated();
+
+        // Verifica lo stato del database ed esegui eventuali migrazioni pendenti
+        if (context.Database.GetPendingMigrations().Any())
         {
-            var logger = services.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "Si è verificato un errore durante la migrazione o l'inizializzazione del database.");
-            Console.WriteLine($"ERRORE nell'inizializzazione del database: {ex.Message}");
+            Console.WriteLine("Applicazione delle migrazioni pendenti...");
+            context.Database.Migrate();
+            Console.WriteLine("Migrazioni applicate con successo!");
+        }
+        else
+        {
+            Console.WriteLine("Database aggiornato, nessuna migrazione pendente.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"ERRORE nell'inizializzazione del database: {ex.Message}");
+        if (!app.Environment.IsDevelopment())
+        {
+            // In ambiente di produzione possiamo decidere se far fallire l'applicazione
+            // throw;
         }
     }
 }
