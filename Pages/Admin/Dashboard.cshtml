@@ -1,0 +1,105 @@
+﻿@page
+@model videoscriptAI.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-3">Admin Dashboard</h1>
+            <p class="text-muted">Gestisci gli utenti, visualizza le statistiche e configura VideoScriptAI</p>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Cards delle statistiche -->
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Utenti Totali</h5>
+                    <h2 class="card-text">@Model.TotalUsers</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Script Generati</h5>
+                    <h2 class="card-text">@Model.TotalChats</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Utenti Attivi</h5>
+                    <h2 class="card-text">@Model.ActiveUsers</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mb-4">
+            <!-- Tabella Utenti -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Utenti Recenti</h5>
+                    <a asp-page="./Users" class="btn btn-sm btn-outline-primary">Visualizza Tutti</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                   
+                                    <th>Email</th>
+                                    <th>Data Registrazione</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var user in Model.RecentUsers)
+                                {
+                                    <tr>
+                                        
+                                        <td>@user.Email</td>
+                                        <td>@user.RegisterDate.ToShortDateString()</td>
+                                        <td>
+                                            @if (user.IsAdmin)
+                                            {
+                                                <span class="badge bg-primary">Admin</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success">Utente</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <!-- Menu di Navigazione Admin -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Gestione Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a asp-page="./Users" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            Gestione Utenti
+                            <span class="badge bg-primary rounded-pill">@Model.TotalUsers</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

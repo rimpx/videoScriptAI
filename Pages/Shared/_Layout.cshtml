@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<videoscriptAI.Models.ApplicationUser> UserManager
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -153,6 +156,19 @@
                     <li class="nav-item">
                         <a class="nav-link" asp-page="/Index">Home</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-page="/Informazioni">Come funziona?</a>
+                    </li>
+                    @if (User.Identity?.IsAuthenticated ?? false)
+                    {
+                        var user = await UserManager.GetUserAsync(User);
+                        if (user?.IsAdmin == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-page="/Admin/Dashboard">Admin Dashboard</a>
+                            </li>
+                        }
+                    }
                 </ul>
                 <div class="d-flex gap-2">
                     @if (User.Identity?.IsAuthenticated ?? false)

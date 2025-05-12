@@ -6,6 +6,8 @@ using videoscriptAI.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using System.Diagnostics;
+using videoscriptAI.Authorization;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +18,7 @@ builder.Services.AddHttpClient();
 var connectionString = "workstation id=videoscriptAI.mssql.somee.com;packet size=4096;user id=rimpi_SQLLogin_1;pwd=3lymgrctfg;data source=videoscriptAI.mssql.somee.com;persist security info=False;initial catalog=videoscriptAI;TrustServerCertificate=True";
 Console.WriteLine($"Utilizzando SQL Server: {connectionString}");
 
-// Configurazione del DbContext con approccio semplificato (simile all'esempio funzionante)
+// Configurazione del DbContext con approccio semplificato 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
@@ -30,6 +32,25 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options => {
     options.Password.RequiredLength = 8;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>();
+
+// Configura l'autorizzazione globale - richiede autenticazione per tutte le pagine
+const string GLOBAL_AUTH_POLICY = "GlobalAuthPolicy";
+
+// Aggiungi la policy di autorizzazione (corretto duplicazione)
+builder.Services.AddAuthorization(options =>
+{
+    // Policy che richiede l'utente sia admin
+    options.AddPolicy("RequireAdminRole", policy =>
+        policy.AddRequirements(new AdminRoleRequirement())
+    );
+
+    // Policy globale di autenticazione
+    options.AddPolicy(GLOBAL_AUTH_POLICY, policy =>
+        policy.RequireAuthenticatedUser()
+    );
+});
+
+builder.Services.AddScoped<IAuthorizationHandler, AdminRoleHandler>();
 
 // Estendi l'autenticazione con Google
 builder.Services.AddAuthentication()
@@ -51,28 +72,29 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// Configura l'autorizzazione globale - richiede autenticazione per tutte le pagine
-var globalAuthPolicy = new AuthorizationPolicyBuilder()
-    .RequireAuthenticatedUser()
-    .Build();
-
 // Registra i servizi dell'applicazione con autorizzazione globale
 builder.Services.AddRazorPages(options =>
 {
-    options.Conventions.AuthorizeFolder("/");
-    // Escludiamo solo le pagine di login/account dall'autenticazione obbligatoria
-    options.Conventions.AllowAnonymousToPage("/Account/Login");
-    options.Conventions.AllowAnonymousToPage("/Account/Register");
-    options.Conventions.AllowAnonymousToPage("/Account/ForgotPassword");
-    options.Conventions.AllowAnonymousToPage("/Account/ResetPassword");
-    options.Conventions.AllowAnonymousToPage("/Account/Lockout");
-    options.Conventions.AllowAnonymousToPage("/Account/AccessDenied");
+
+    options.Conventions.AllowAnonymousToPage("/Informazioni");
+
+    // Consenti accesso anonimo a tutte le pagine di autenticazione
+    options.Conventions.AllowAnonymousToFolder("/Account");
     options.Conventions.AllowAnonymousToPage("/Error");
+
+    // Richiedi autenticazione per tutto il resto
+    options.Conventions.AuthorizeFolder("/", GLOBAL_AUTH_POLICY);
+
+    // Richiedi policy admin per la cartella Admin
+    options.Conventions.AuthorizeFolder("/Admin", "RequireAdminRole");
 });
+
 
 builder.Services.AddControllers(options =>
 {
-    options.Filters.Add(new AuthorizeFilter(globalAuthPolicy));
+    options.Filters.Add(new AuthorizeFilter(new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build()));
 });
 
 // Registra i servizi personalizzati
@@ -140,5 +162,19 @@ app.UseAuthorization();
 // Importante: mappa sia i controller che le pagine Razor
 app.MapControllers();
 app.MapRazorPages();
+
+// Aggiungi qui la chiamata all'AdminSeeder
+Task.Run(async () =>
+{
+    try
+    {
+        Console.WriteLine("Inizializzazione dell'utente amministratore...");
+        await AdminSeeder.SeedAdmin(app.Services);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Errore durante l'inizializzazione dell'utente amministratore: {ex.Message}");
+    }
+}).GetAwaiter().GetResult();
 
 app.Run();

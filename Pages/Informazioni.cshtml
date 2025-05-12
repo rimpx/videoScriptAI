@@ -1,0 +1,69 @@
+﻿@page
+@model videoscriptAI.Pages.InformazioniModel
+@{
+    ViewData["Title"] = "Informazioni su VideoScriptAI";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h1 class="display-4 mb-4">Benvenuti in VideoScriptAI</h1>
+
+            <div class="card mb-5">
+                <div class="card-body">
+                    <h2 class="card-title h4">Trasforma i tuoi video in script dettagliati</h2>
+                    <p class="card-text">
+                        VideoScriptAI è una piattaforma innovativa che utilizza l'intelligenza artificiale
+                        per analizzare i tuoi video e generare script, trascrizioni e analisi dettagliate.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row mb-5">
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h3 class="h5 card-title">Carica Video</h3>
+                            <p class="card-text">Carica facilmente i tuoi video direttamente dalla tua libreria o inserisci un URL YouTube per analizzare contenuti online.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h3 class="h5 card-title">Analisi Avanzata</h3>
+                            <p class="card-text">Ottieni trascrizioni accurate, riassunti dettagliati e analisi approfondite del contenuto dei tuoi video.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h3 class="h5 card-title">Chat Interattiva</h3>
+                            <p class="card-text">Interagisci con l'AI per fare domande specifiche sul tuo video e ricevere risposte dettagliate.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="h3 mb-4">Come funziona?</h2>
+            <div class="card mb-5">
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-3">Registrati per creare un account gratuito</li>
+                        <li class="mb-3">Carica un video dal tuo dispositivo o inserisci un URL YouTube</li>
+                        <li class="mb-3">L'AI elabora il video e genera trascrizioni e analisi</li>
+                        <li class="mb-3">Interagisci con la trascrizione attraverso la nostra chat intelligente</li>
+                        <li>Scarica i risultati o continua a collaborare con l'AI per ottenere informazioni aggiuntive</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="text-center mt-5">
+                <h3 class="mb-4">Pronto a trasformare i tuoi video?</h3>
+                <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary btn-lg me-3">Registrati Ora</a>
+                <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-outline-secondary btn-lg">Accedi</a>
+            </div>
+        </div>
+    </div>
+</div>

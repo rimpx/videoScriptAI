@@ -2,17 +2,19 @@
 using Microsoft.EntityFrameworkCore;
 using videoscriptAI.Models;
 
-
 namespace videoscriptAI.Data
 {
-    public class ApplicationDbContext : IdentityDbContext
+    // Aggiungi il tipo generico ApplicationUser qui
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
         }
 
-        public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+        // Rimuovi questa riga perché è ridondante quando ApplicationUser è già il tipo utente predefinito
+        // public DbSet<ApplicationUser> ApplicationUsers { get; set; }
+
         public DbSet<Chat> Chats { get; set; }
         public DbSet<ChatContent> ChatContents { get; set; }
 
